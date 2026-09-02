@@ -18,7 +18,7 @@ const MOCK_USERS = [
     nama: 'Sari Rahmawati',
     sapaan: 'Bu Sari',
     peran: 'kader',
-    dusun: 'Sukamaju',
+    dusun: 'Gamping Wetan',
     telepon: '0812-3456-7890'
   },
   {
@@ -28,7 +28,7 @@ const MOCK_USERS = [
     nama: 'Rini Astuti',
     sapaan: 'Bu Rini',
     peran: 'kader',
-    dusun: 'Melati',
+    dusun: 'Boharan',
     telepon: '0813-9876-5432'
   },
   {
@@ -38,14 +38,14 @@ const MOCK_USERS = [
     nama: 'Bidan Siti Nurhaliza, S.Tr.Keb',
     sapaan: 'Bidan Siti',
     peran: 'bidan',
-    dusun: 'Semua Dusun (Desa Sukatani)',
+    dusun: 'Semua Dusun (Desa Gamping Wetan)',
     telepon: '0811-2233-4455'
   },
   {
     id: 'usr_admin_1',
     username: 'admin',
     password: '123',
-    nama: 'Administrator Desa Sukatani',
+    nama: 'Administrator Desa Gamping Wetan',
     sapaan: 'Pak Admin',
     peran: 'admin',
     dusun: 'Pemerintah Desa',
@@ -54,10 +54,10 @@ const MOCK_USERS = [
 ];
 
 const MOCK_DUSUN = [
-  'Sukamaju',
-  'Melati',
-  'Harapan',
-  'Karangrejo'
+  'Gamping Wetan',
+  'Boharan',
+  'Bendomungal',
+  'Kasengan'
 ];
 
 const MOCK_BALITA = [
@@ -69,8 +69,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'P',
     namaOrangTua: 'Siti Aminah',
     namaAyah: 'Herman Susanto',
-    dusun: 'Melati',
-    alamat: 'RT 02 / RW 01 Dusun Melati',
+    dusun: 'Gamping Wetan',
+    alamat: 'RT 02 / RW 01 Dusun Gamping Wetan',
     aktif: true,
     statusTerakhir: 'pemantauan',
     beratTerakhir: 10.8,
@@ -88,8 +88,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'L',
     namaOrangTua: 'Ahmad Fauzi',
     namaAyah: 'Ahmad Fauzi',
-    dusun: 'Sukamaju',
-    alamat: 'RT 01 / RW 02 Dusun Sukamaju',
+    dusun: 'Boharan',
+    alamat: 'RT 01 / RW 02 Dusun Boharan',
     aktif: true,
     statusTerakhir: 'pemantauan',
     beratTerakhir: 9.8,
@@ -107,8 +107,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'P',
     namaOrangTua: 'Dewi Lestari',
     namaAyah: 'Budi Santoso',
-    dusun: 'Sukamaju',
-    alamat: 'RT 03 / RW 02 Dusun Sukamaju',
+    dusun: 'Kasengan',
+    alamat: 'RT 03 / RW 02 Dusun Kasengan',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 9.4,
@@ -126,8 +126,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'L',
     namaOrangTua: 'Hendra Setiawan',
     namaAyah: 'Hendra Setiawan',
-    dusun: 'Harapan',
-    alamat: 'RT 01 / RW 01 Dusun Harapan',
+    dusun: 'Bendomungal',
+    alamat: 'RT 01 / RW 01 Dusun Bendomungal',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 14.2,
@@ -145,8 +145,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'L',
     namaOrangTua: 'Sri Rahayu',
     namaAyah: 'Agus Salim',
-    dusun: 'Melati',
-    alamat: 'RT 04 / RW 01 Dusun Melati',
+    dusun: 'Gamping Wetan',
+    alamat: 'RT 04 / RW 01 Dusun Gamping Wetan',
     aktif: true,
     statusTerakhir: 'prioritas',
     beratTerakhir: 8.6,
@@ -164,8 +164,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'P',
     namaOrangTua: 'Maya Indah',
     namaAyah: 'Rizal Fahmi',
-    dusun: 'Karangrejo',
-    alamat: 'RT 02 / RW 03 Dusun Karangrejo',
+    dusun: 'Boharan',
+    alamat: 'RT 02 / RW 03 Dusun Boharan',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 7.9,
@@ -183,8 +183,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'L',
     namaOrangTua: 'Bambang Irawan',
     namaAyah: 'Bambang Irawan',
-    dusun: 'Sukamaju',
-    alamat: 'RT 02 / RW 02 Dusun Sukamaju',
+    dusun: 'Gamping Wetan',
+    alamat: 'RT 02 / RW 02 Dusun Gamping Wetan',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 13.1,
@@ -202,8 +202,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'P',
     namaOrangTua: 'Rahmat Hidayat',
     namaAyah: 'Rahmat Hidayat',
-    dusun: 'Harapan',
-    alamat: 'RT 03 / RW 01 Dusun Harapan',
+    dusun: 'Bendomungal',
+    alamat: 'RT 03 / RW 01 Dusun Bendomungal',
     aktif: true,
     statusTerakhir: 'pemantauan',
     beratTerakhir: 8.0,
@@ -221,8 +221,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'L',
     namaOrangTua: 'Nurul Huda',
     namaAyah: 'Arif Wibowo',
-    dusun: 'Karangrejo',
-    alamat: 'RT 01 / RW 03 Dusun Karangrejo',
+    dusun: 'Kasengan',
+    alamat: 'RT 01 / RW 03 Dusun Kasengan',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 11.2,
@@ -240,8 +240,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'P',
     namaOrangTua: 'Anita Sulistyo',
     namaAyah: 'Dwi Prasetyo',
-    dusun: 'Melati',
-    alamat: 'RT 01 / RW 01 Dusun Melati',
+    dusun: 'Gamping Wetan',
+    alamat: 'RT 01 / RW 01 Dusun Gamping Wetan',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 15.6,
@@ -251,6 +251,7 @@ const MOCK_BALITA = [
     sudahDiukurBulanIni: true,
     catatan: 'Pemberian vitamin A telah dilakukan.'
   },
+
   {
     id: 'blt_11',
     nik: '3515081802260011',
@@ -259,8 +260,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'L',
     namaOrangTua: 'Eko Wahyudi',
     namaAyah: 'Eko Wahyudi',
-    dusun: 'Sukamaju',
-    alamat: 'RT 04 / RW 02 Dusun Sukamaju',
+    dusun: 'Boharan',
+    alamat: 'RT 04 / RW 02 Dusun Boharan',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 7.6,
@@ -270,6 +271,7 @@ const MOCK_BALITA = [
     sudahDiukurBulanIni: true,
     catatan: 'Mulai MPASI tunggal bertahap.'
   },
+
   {
     id: 'blt_12',
     nik: '3515085004250012',
@@ -278,8 +280,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'P',
     namaOrangTua: 'Wati Marlina',
     namaAyah: 'Slamet Riyadi',
-    dusun: 'Sukamaju',
-    alamat: 'RT 02 / RW 02 Dusun Sukamaju',
+    dusun: 'Bendomungal',
+    alamat: 'RT 02 / RW 02 Dusun Bendomungal',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 9.9,
@@ -289,6 +291,7 @@ const MOCK_BALITA = [
     sudahDiukurBulanIni: false,
     catatan: 'Keluarga sedang ke luar kota saat posyandu Juli.'
   },
+
   {
     id: 'blt_13',
     nik: '3515082007240013',
@@ -297,8 +300,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'L',
     namaOrangTua: 'Farhan Azis',
     namaAyah: 'Farhan Azis',
-    dusun: 'Harapan',
-    alamat: 'RT 02 / RW 01 Dusun Harapan',
+    dusun: 'Kasengan',
+    alamat: 'RT 02 / RW 01 Dusun Kasengan',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 11.9,
@@ -308,6 +311,7 @@ const MOCK_BALITA = [
     sudahDiukurBulanIni: false,
     catatan: 'Kunjungan rumah direncanakan bila tidak hadir.'
   },
+
   {
     id: 'blt_14',
     nik: '3515081010250014',
@@ -316,8 +320,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'L',
     namaOrangTua: 'Lisa Permata',
     namaAyah: 'Deni Setiawan',
-    dusun: 'Melati',
-    alamat: 'RT 03 / RW 01 Dusun Melati',
+    dusun: 'Gamping Wetan',
+    alamat: 'RT 03 / RW 01 Dusun Gamping Wetan',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 8.8,
@@ -327,6 +331,7 @@ const MOCK_BALITA = [
     sudahDiukurBulanIni: false,
     catatan: 'Perlu jadwal timbang ulang.'
   },
+
   {
     id: 'blt_15',
     nik: '3515086212230015',
@@ -335,8 +340,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'P',
     namaOrangTua: 'Tri Wahyuni',
     namaAyah: 'Sigit Purnomo',
-    dusun: 'Sukamaju',
-    alamat: 'RT 01 / RW 02 Dusun Sukamaju',
+    dusun: 'Boharan',
+    alamat: 'RT 01 / RW 02 Dusun Boharan',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 12.8,
@@ -346,6 +351,7 @@ const MOCK_BALITA = [
     sudahDiukurBulanIni: false,
     catatan: 'Kondisi kesehatan stabil.'
   },
+
   {
     id: 'blt_16',
     nik: '3515080808220016',
@@ -354,8 +360,8 @@ const MOCK_BALITA = [
     jenisKelamin: 'L',
     namaOrangTua: 'Rudi Hartono',
     namaAyah: 'Rudi Hartono',
-    dusun: 'Karangrejo',
-    alamat: 'RT 03 / RW 03 Dusun Karangrejo',
+    dusun: 'Bendomungal',
+    alamat: 'RT 03 / RW 03 Dusun Bendomungal',
     aktif: true,
     statusTerakhir: 'normal',
     beratTerakhir: 16.2,
@@ -530,7 +536,7 @@ const MOCK_AKTIVITAS = [
   {
     waktu: '09:12',
     tanggal: 'Hari ini',
-    teks: 'Bu Sari mencatat pengukuran Dinda Aulia di Dusun Melati.'
+    teks: 'Bu Sari mencatat pengukuran Dinda Aulia di Dusun Gamping Wetan.'
   },
   {
     waktu: '08:43',
@@ -675,7 +681,7 @@ const MOCK_JADWAL_POSYANDU = [
     bulan: 'SEP',
     tanggalLengkap: '12 September 2026',
     judul: 'Posyandu Balita — Dusun Sukamaju',
-    lokasi: 'Balai RW 02, Dusun Sukamaju',
+    lokasi: 'Balai RW 02, Dusun Gamping Wetan',
     jam: '08.00 – 11.00 WIB',
     layanan: ['Penimbangan', 'Pengukuran Tinggi', 'Konsultasi Bidan']
   },
@@ -684,7 +690,7 @@ const MOCK_JADWAL_POSYANDU = [
     hari: 13,
     bulan: 'SEP',
     tanggalLengkap: '13 September 2026',
-    judul: 'Posyandu Balita — Dusun Melati',
+    judul: 'Posyandu Balita — Dusun Boharan',
     lokasi: 'Pos Sehat Melati',
     jam: '08.00 – 11.00 WIB',
     layanan: ['Penimbangan', 'Pengukuran Tinggi', 'Vitamin A']
@@ -694,7 +700,7 @@ const MOCK_JADWAL_POSYANDU = [
     hari: 10,
     bulan: 'OKT',
     tanggalLengkap: '10 Oktober 2026',
-    judul: 'Posyandu Balita — Dusun Harapan',
+    judul: 'Posyandu Balita — Dusun Kasengan',
     lokasi: 'Balai Dusun Harapan',
     jam: '08.00 – 11.30 WIB',
     layanan: ['Penimbangan', 'Pengukuran Tinggi', 'Konsultasi Bidan']

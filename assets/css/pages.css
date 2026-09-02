@@ -1,7 +1,6 @@
 .landing-nav {
-  background-color: var(--surface);
+  background-color: var(--navbar);
   padding: 1.15rem 0;
-  border-bottom: 1px solid var(--line);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -35,7 +34,7 @@
 .landing-brand .brand-title {
   font-size: 1.35rem;
   font-weight: 800;
-  color: var(--forest-900);
+  color: var(--surface);
   letter-spacing: -0.03em;
   display: block;
   line-height: 1.1;
@@ -43,7 +42,7 @@
 
 .landing-brand .brand-subtitle {
   font-size: 0.75rem;
-  color: var(--ink-500);
+  color: var(--surface);
   font-weight: 500;
   display: block;
 }
@@ -58,7 +57,7 @@
 }
 
 .landing-menu a {
-  color: var(--ink-700);
+  color: var(--surface);
   font-weight: 600;
   font-size: 0.9375rem;
   transition: color var(--transition-fast);
@@ -68,9 +67,11 @@
   color: var(--green-700);
 }
 
-.hero-section {
-  padding: var(--space-64) 0;
-  background-color: var(--canvas);
+.navbar-logo-sementara {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  display: block;
 }
 
 .hero-title {
@@ -143,6 +144,7 @@
   border-bottom: 1px solid var(--line);
   padding: var(--space-20) 0;
 }
+
 
 .kegiatan-wrapper {
   display: flex;
@@ -821,81 +823,290 @@
 }
 
 .login-body {
-  background-color: var(--canvas);
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+  background: var(--canvas-soft);
+}
+
+.login-page {
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+
+.login-image-panel {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+
+.login-image-panel>img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.login-image-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+      rgba(33, 7, 19, 0.2),
+      rgba(33, 7, 19, 0.82));
+}
+
+.login-image-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: 42px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.login-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  width: fit-content;
+  color: white;
+  text-decoration: none;
+}
+
+.login-brand:hover {
+  color: white;
+}
+
+.login-brand .login-logo {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: white;
+  color: var(--forest-900);
+  font-size: 20px;
+}
+
+.login-brand strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.login-brand span {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.login-image-content {
+  max-width: 570px;
+}
+
+.login-image-label {
+  display: inline-block;
+  margin-bottom: 14px;
+  padding: 6px 12px;
+  border: 1px solid rgba(244, 217, 208, 0.35);
+  border-radius: var(--radius-pill);
+  background: rgba(244, 217, 208, 0.15);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.login-image-content h1 {
+  margin-bottom: 16px;
+  color: white;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.12;
+  letter-spacing: -0.04em;
+}
+
+.login-image-content p {
+  max-width: 500px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.95rem;
+}
+
+
+.login-form-panel {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-20);
+  padding: 48px;
+  background: var(--canvas-soft);
 }
 
 .login-card {
   width: 100%;
-  max-width: 440px;
-  background-color: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
-  padding: var(--space-32);
-  box-shadow: var(--shadow-panel);
+  max-width: 430px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .login-header {
-  text-align: center;
-  margin-bottom: var(--space-24);
+  margin-bottom: 30px;
 }
 
-.login-logo {
-  width: 48px;
-  height: 48px;
-  background-color: var(--green-700);
-  color: #fff;
-  border-radius: 14px 14px 2px 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  margin-bottom: var(--space-12);
+.login-mobile-logo {
+  display: none;
+}
+
+.login-welcome {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--green-700);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.login-header h2 {
+  color: var(--forest-900);
+  font-weight: 700;
+}
+
+.login-header p {
+  color: var(--ink-500);
+}
+
+.login-card .form-control-posyandu {
+  height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: none;
+  font-size: 14px;
+}
+
+.login-card .form-control-posyandu:focus {
+  border-color: var(--green-700);
+  outline: none;
+  box-shadow: none;
+}
+
+
+.login-card .btn-posyandu-primary,
+.login-card .btn-posyandu-secondary {
+  min-height: 44px;
+  border-radius: 6px;
+  box-shadow: none;
 }
 
 .demo-account-box {
-  background-color: var(--surface-soft);
+  margin-top: 28px;
+  padding: 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  padding: var(--space-12) var(--space-16);
-  margin-top: var(--space-20);
+  background: var(--surface);
 }
 
 .demo-account-title {
-  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 12px;
+  color: var(--ink-800);
+  font-size: 0.8rem;
   font-weight: 700;
-  text-transform: uppercase;
-  color: var(--ink-500);
-  margin-bottom: var(--space-8);
-  letter-spacing: 0.05em;
+}
+
+.demo-account-title i {
+  color: var(--green-700);
 }
 
 .demo-chips {
   display: flex;
-  gap: var(--space-8);
   flex-wrap: wrap;
+  gap: 7px;
 }
 
 .demo-chip {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  padding: 4px 10px;
-  background-color: var(--surface);
+  padding: 6px 10px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  color: var(--ink-700);
+  font-family: var(--font-family-base);
+  font-size: 0.72rem;
   cursor: pointer;
-  color: var(--forest-900);
   transition: all var(--transition-fast);
 }
 
 .demo-chip:hover {
-  background-color: var(--green-100);
-  border-color: var(--green-200);
-  color: var(--green-700);
+  border-color: var(--green-700);
+  background: var(--green-100);
+  color: var(--forest-900);
+}
+
+
+@media (max-width: 900px) {
+
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .login-image-panel {
+    min-height: 360px;
+    height: 360px;
+  }
+
+  .login-form-panel {
+    min-height: auto;
+    padding: 48px 24px;
+  }
+
+}
+
+
+@media (max-width: 575px) {
+
+  .login-image-panel {
+    min-height: 300px;
+    height: 300px;
+  }
+
+  .login-image-overlay {
+    padding: 24px;
+  }
+
+  .login-image-content h1 {
+    font-size: 1.8rem;
+  }
+
+  .login-image-content p {
+    display: none;
+  }
+
+  .login-form-panel {
+    padding: 36px 20px;
+  }
+
+  .login-header h2 {
+    font-size: 1.5rem;
+  }
+
 }
 
 .child-profile-hero {
@@ -1004,4 +1215,71 @@
   align-items: center;
   justify-content: center;
   margin-bottom: var(--space-16);
+}
+
+.hero-section {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 80px 0;
+  background-image: url("../images/berita_vitamin_a.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(33, 22, 22, 0.65);
+  z-index: 0;
+}
+
+.hero-section>.container {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-section .hero-title {
+  color: var(--ink-white);
+}
+
+.hero-section .hero-desc {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.tombol-scroll-hero {
+  position: absolute;
+  left: 50%;
+  bottom: 150px;
+
+  transform: translateX(-50%);
+
+  width: 46px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+
+  color: #000000;
+  background: white;
+
+  text-decoration: none;
+
+  z-index: 5;
+
+  transition: all var(--transition-fast);
+}
+
+#jadwal{
+  scroll-margin-top: 80px;
 }

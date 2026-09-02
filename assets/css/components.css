@@ -1,4 +1,3 @@
-
 .status-badge {
   display: inline-flex;
   align-items: center;
@@ -396,8 +395,13 @@
 }
 
 @keyframes skeleton-loading {
-  0% { background-position: 100% 50%; }
-  100% { background-position: 0 50%; }
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0 50%;
+  }
 }
 
 .skeleton-text {
@@ -444,10 +448,21 @@
   opacity: 1;
 }
 
-.posyandu-toast-success i { color: var(--success); }
-.posyandu-toast-danger i { color: var(--danger); }
-.posyandu-toast-warning i { color: var(--warning); }
-.posyandu-toast-info i { color: var(--info); }
+.posyandu-toast-success i {
+  color: var(--success);
+}
+
+.posyandu-toast-danger i {
+  color: var(--danger);
+}
+
+.posyandu-toast-warning i {
+  color: var(--warning);
+}
+
+.posyandu-toast-info i {
+  color: var(--info);
+}
 
 .modal-content-posyandu {
   border-radius: var(--radius-lg);
