@@ -4,6 +4,15 @@
   --forest-800: #0D47A1;
   --forest-700: #0D47A1;
 
+  --blue-900: #0D47A1;
+  --blue-800: #1565C0;
+  --blue-700: #1976D2;
+  --blue-600: #2196F3;
+  --blue-500: #42A5F5;
+  --blue-200: #90CAF9;
+  --blue-100: #E3F2FD;
+  --blue-50: #F0F7FF;
+
   --green-700: #2196F3;
   --green-600: #2196F3;
   --green-500: #2196F3;
@@ -82,7 +91,8 @@
   --shadow-panel: 0 10px 28px rgba(13, 71, 161, 0.07);
   --shadow-dropdown: 0 14px 36px rgba(13, 71, 161, 0.12);
 
-  --font-family-base: 'Plus Jakarta Sans',
+  --font-family-base: 'Poppins',
+    'Inter',
     -apple-system,
     BlinkMacSystemFont,
     'Segoe UI',

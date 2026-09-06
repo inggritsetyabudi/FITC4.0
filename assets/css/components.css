@@ -240,11 +240,33 @@
   background-color: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.table-posyandu-wrap::-webkit-scrollbar {
+  height: 8px;
+}
+
+.table-posyandu-wrap::-webkit-scrollbar-track {
+  background: var(--surface-soft, #f8fafc);
+  border-radius: 4px;
+}
+
+.table-posyandu-wrap::-webkit-scrollbar-thumb {
+  background: #90caf9;
+  border-radius: 4px;
+}
+
+.table-posyandu-wrap::-webkit-scrollbar-thumb:hover {
+  background: #1565c0;
 }
 
 .table-posyandu {
   width: 100%;
+  min-width: 820px;
   border-collapse: collapse;
   margin-bottom: 0;
   font-size: 0.875rem;
@@ -273,7 +295,7 @@
 }
 
 .table-posyandu tbody tr:hover {
-  background-color: var(--green-50);
+  background-color: rgba(21, 101, 192, 0.04);
 }
 
 .toolbar-posyandu {
@@ -537,4 +559,39 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: var(--space-12) var(--space-16);
+}
+
+@media print {
+  .app-sidebar,
+  .app-topbar,
+  .nav-kader-mobile,
+  .btn,
+  .no-print {
+    display: none !important;
+  }
+  body, .app-layout, .app-main, .app-content {
+    background: #fff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #000 !important;
+  }
+  .table-posyandu-wrap {
+    border: none !important;
+    overflow: visible !important;
+  }
+  .table-posyandu {
+    min-width: 100% !important;
+    width: 100% !important;
+    border: 1px solid #333 !important;
+  }
+  .table-posyandu th,
+  .table-posyandu td {
+    border: 1px solid #333 !important;
+    color: #000 !important;
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+  .table-posyandu th {
+    background-color: #f1f5f9 !important;
+  }
 }
