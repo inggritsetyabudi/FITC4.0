@@ -169,97 +169,115 @@ require_once __DIR__ . '/../../includes/landing_nav.php';
         </a>
       </div>
 
-      <div class="pt-5 border-top">
+      <div class="pt-5 border-top" id="jadwal">
         <div class="text-center max-w-700 mx-auto mb-5">
-          <h3 class="h1 text-forest fw-bold mb-3" style="font-size: 2.2rem;">Alur Pelayanan Posyandu</h3>
+          <span class="badge rounded-pill bg-primary-subtle text-primary border px-3 py-2 fw-bold mb-2" style="font-size: 0.9rem;">Agenda Terpadu Desa</span>
+          <h3 class="h1 text-forest fw-bold mb-3" style="font-size: 2.2rem;">Jadwal Pelayanan Posyandu</h3>
           <p class="text-ink-700" style="font-size: 1.15rem; line-height: 1.7;">
-            Tahapan pelayanan pada hari buka Posyandu agar pemeriksaan tumbuh kembang balita berjalan tertib, cepat, dan teliti bagi seluruh keluarga.
+            Informasi resmi pelaksanaan penimbangan balita, imunisasi, pemeriksaan ibu hamil, dan posbindu lansia yang terhubung langsung dengan sistem desa.
           </p>
         </div>
 
-        <div class="row g-4 mb-4">
-          <div class="col-lg-4 col-md-6">
-            <div class="card p-4 p-xl-5 rounded-4 border-line h-100 shadow-xs bg-surface text-center">
-              <div class="d-inline-flex align-items-center justify-content-center mx-auto rounded-circle mb-3" style="width: 70px; height: 70px; background-color: #e3f2fd; color: #0d47a1; font-size: 2rem;">
-                <i class="bi bi-person-check-fill"></i>
+        <div class="row g-4 mb-5">
+          <?php if (empty($jadwalPosyandu)): ?>
+            <div class="col-12 text-center py-4">
+              <div class="p-4 rounded-4 border-line bg-surface max-w-600 mx-auto shadow-xs">
+                <i class="bi bi-calendar2-check text-primary fs-1 mb-2 d-block"></i>
+                <h4 class="h5 fw-bold text-forest mb-1">Jadwal Sedang Disiapkan</h4>
+                <p class="text-muted-posyandu mb-0 font-sm">Jadwal kegiatan posyandu periode berikutnya akan segera diumumkan oleh bidan dan kader desa.</p>
               </div>
-              <div class="mb-3">
-                <span class="badge rounded-pill bg-primary-subtle text-primary border px-3 py-2 fw-bold" style="font-size: 0.9rem;">Langkah 1</span>
-              </div>
-              <h4 class="fw-bold text-forest mb-2" style="font-size: 1.35rem; line-height: 1.35;">Pelayanan Pendaftaran</h4>
-              <div class="fw-semibold text-primary mb-3" style="font-size: 1.05rem;">Pencatatan Kehadiran &amp; Identitas</div>
-              <p class="text-ink-700 mb-0" style="font-size: 1.05rem; line-height: 1.7;">
-                Pencocokan identitas balita dan orang tua dengan buku register binaan dusun sebelum pemeriksaan fisik dimulai.
-              </p>
             </div>
-          </div>
+          <?php else: ?>
+            <?php foreach ($jadwalPosyandu as $j): ?>
+              <?php
+              $statusBadge = match($j['status'] ?? 'rencana') {
+                'selesai' => '<span class="badge bg-success font-xs px-2 py-1"><i class="bi bi-check-circle me-1"></i>Selesai</span>',
+                default   => '<span class="badge bg-primary font-xs px-2 py-1"><i class="bi bi-clock me-1"></i>Akan Datang</span>'
+              };
+              ?>
+              <div class="col-lg-6">
+                <div class="card p-4 rounded-4 border-line h-100 shadow-xs bg-surface d-flex flex-column justify-content-between transition hover-shadow" style="border-left: 4px solid #1565C0 !important;">
+                  <div>
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="badge rounded-pill bg-primary-subtle text-primary border px-3 py-1 font-xs fw-bold">
+                          Dusun <?= htmlspecialchars($j['dusun']) ?>
+                        </span>
+                        <span class="text-muted-posyandu font-xs fw-semibold">
+                          <?= htmlspecialchars($j['jenis_layanan'] ?: 'Layanan Posyandu') ?>
+                        </span>
+                      </div>
+                      <?= $statusBadge ?>
+                    </div>
 
-          <div class="col-lg-4 col-md-6">
-            <div class="card p-4 p-xl-5 rounded-4 border-line h-100 shadow-xs bg-surface text-center">
-              <div class="d-inline-flex align-items-center justify-content-center mx-auto rounded-circle mb-3" style="width: 70px; height: 70px; background-color: #e0f2fe; color: #0284c7; font-size: 2rem;">
-                <i class="bi bi-rulers"></i>
-              </div>
-              <div class="mb-3">
-                <span class="badge rounded-pill bg-primary-subtle text-primary border px-3 py-2 fw-bold" style="font-size: 0.9rem;">Langkah 2</span>
-              </div>
-              <h4 class="fw-bold text-forest mb-2" style="font-size: 1.35rem; line-height: 1.35;">Pelayanan Penimbangan</h4>
-              <div class="fw-semibold text-primary mb-3" style="font-size: 1.05rem;">Pengukuran Fisik Balita</div>
-              <p class="text-ink-700 mb-0" style="font-size: 1.05rem; line-height: 1.7;">
-                Penimbangan berat badan balita memakai timbangan digital serta pengukuran panjang atau tinggi badan secara cermat dan akurat.
-              </p>
-            </div>
-          </div>
+                    <h4 class="fw-bold text-forest mb-2" style="font-size: 1.25rem; line-height: 1.4;">
+                      <?= htmlspecialchars($j['judul_agenda']) ?>
+                    </h4>
 
-          <div class="col-lg-4 col-md-12">
-            <div class="card p-4 p-xl-5 rounded-4 border-line h-100 shadow-xs bg-surface text-center">
-              <div class="d-inline-flex align-items-center justify-content-center mx-auto rounded-circle mb-3" style="width: 70px; height: 70px; background-color: #ede9fe; color: #6d28d9; font-size: 2rem;">
-                <i class="bi bi-phone-fill"></i>
+                    <div class="d-flex flex-column gap-2 my-3 font-sm">
+                      <div class="d-flex align-items-center gap-2 text-forest">
+                        <i class="bi bi-calendar-event text-primary fs-5" style="width: 24px;"></i>
+                        <strong><?= format_tanggal_id($j['tanggal_kegiatan']) ?></strong>
+                        <span class="text-muted-posyandu">· <?= substr($j['jam_mulai'], 0, 5) ?> - <?= substr($j['jam_selesai'], 0, 5) ?> WIB</span>
+                      </div>
+                      <div class="d-flex align-items-start gap-2 text-ink-700">
+                        <i class="bi bi-geo-alt-fill text-primary fs-5" style="width: 24px;"></i>
+                        <span><?= htmlspecialchars($j['lokasi']) ?></span>
+                      </div>
+                      <div class="d-flex align-items-center gap-2 text-ink-700">
+                        <i class="bi bi-person-badge text-primary fs-5" style="width: 24px;"></i>
+                        <span>Petugas: <strong><?= htmlspecialchars($j['penanggung_jawab']) ?></strong></span>
+                      </div>
+                    </div>
+
+                    <?php if (!empty($j['keterangan'])): ?>
+                      <p class="text-ink-500 font-sm mb-0 p-2 rounded-3 bg-surface-soft border-line">
+                        <i class="bi bi-info-circle me-1 text-primary"></i> <?= htmlspecialchars($j['keterangan']) ?>
+                      </p>
+                    <?php endif; ?>
+                  </div>
+                </div>
               </div>
-              <div class="mb-3">
-                <span class="badge rounded-pill bg-primary-subtle text-primary border px-3 py-2 fw-bold" style="font-size: 0.9rem;">Langkah 3</span>
-              </div>
-              <h4 class="fw-bold text-forest mb-2" style="font-size: 1.35rem; line-height: 1.35;">Pelayanan Pencatatan</h4>
-              <div class="fw-semibold text-primary mb-3" style="font-size: 1.05rem;">Input Data KMS Digital</div>
-              <p class="text-ink-700 mb-0" style="font-size: 1.05rem; line-height: 1.7;">
-                Kader memasukkan hasil pengukuran ke sistem digital. Grafik kurva KMS dan status pertumbuhan anak langsung terbarui otomatis.
-              </p>
-            </div>
-          </div>
+            <?php endforeach; ?>
+          <?php endif; ?>
         </div>
 
-        <div class="row g-4">
-          <div class="col-lg-6 col-md-6">
-            <div class="card p-4 p-xl-5 rounded-4 border-line h-100 shadow-xs bg-surface text-center">
-              <div class="d-inline-flex align-items-center justify-content-center mx-auto rounded-circle mb-3" style="width: 70px; height: 70px; background-color: #fef3c7; color: #d97706; font-size: 2rem;">
-                <i class="bi bi-egg-fried"></i>
+        <?php if (!empty($posLayanan)): ?>
+          <div class="p-4 p-md-5 rounded-4 border-line bg-surface shadow-xs">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4 pb-3 border-bottom">
+              <div>
+                <h4 class="h5 fw-bold text-forest mb-1"><i class="bi bi-hospital text-primary me-2"></i>Daftar Pos Pelayanan Tetap Dusun</h4>
+                <p class="text-muted-posyandu font-sm mb-0">Posyandu binaan desa yang beroperasi rutin setiap bulan bagi warga sekitar</p>
               </div>
-              <div class="mb-3">
-                <span class="badge rounded-pill bg-primary-subtle text-primary border px-3 py-2 fw-bold" style="font-size: 0.9rem;">Langkah 4</span>
-              </div>
-              <h4 class="fw-bold text-forest mb-2" style="font-size: 1.35rem; line-height: 1.35;">Pelayanan Penyuluhan</h4>
-              <div class="fw-semibold text-primary mb-3" style="font-size: 1.05rem;">Konseling Gizi &amp; Pembagian PMT</div>
-              <p class="text-ink-700 mb-0" style="font-size: 1.05rem; line-height: 1.7;">
-                Konseling menu kaya protein hewani (telur, ikan, daging) bagi orang tua serta pembagian paket Makanan Tambahan bergizi seimbang.
-              </p>
+              <span class="badge bg-light text-forest border px-3 py-2 font-xs fw-bold"><?= count($posLayanan) ?> Pos Binaan</span>
             </div>
-          </div>
 
-          <div class="col-lg-6 col-md-6">
-            <div class="card p-4 p-xl-5 rounded-4 border-line h-100 shadow-xs bg-surface text-center">
-              <div class="d-inline-flex align-items-center justify-content-center mx-auto rounded-circle mb-3" style="width: 70px; height: 70px; background-color: #fce7f3; color: #db2777; font-size: 2rem;">
-                <i class="bi bi-heart-pulse-fill"></i>
-              </div>
-              <div class="mb-3">
-                <span class="badge rounded-pill bg-primary-subtle text-primary border px-3 py-2 fw-bold" style="font-size: 0.9rem;">Langkah 5</span>
-              </div>
-              <h4 class="fw-bold text-forest mb-2" style="font-size: 1.35rem; line-height: 1.35;">Pelayanan Kesehatan</h4>
-              <div class="fw-semibold text-primary mb-3" style="font-size: 1.05rem;">Tinjauan Bidan &amp; Vitamin A</div>
-              <p class="text-ink-700 mb-0" style="font-size: 1.05rem; line-height: 1.7;">
-                Pemberian vitamin A, imunisasi dasar lengkap, serta konsultasi langsung bersama Bidan Desa bagi balita yang membutuhkan rujukan khusus.
-              </p>
+            <div class="row g-3">
+              <?php foreach ($posLayanan as $pos): ?>
+                <div class="col-md-6 col-lg-3">
+                  <div class="p-3 rounded-3 border-line bg-surface-soft h-100 d-flex flex-column justify-content-between">
+                    <div>
+                      <div class="d-flex align-items-center justify-content-between mb-2">
+                        <strong class="text-forest font-sm"><?= htmlspecialchars($pos['nama_pos']) ?></strong>
+                        <span class="badge bg-success-subtle text-success font-xs border">Aktif</span>
+                      </div>
+                      <div class="font-xs text-primary fw-semibold mb-1">
+                        <i class="bi bi-geo-alt me-1"></i> Dusun <?= htmlspecialchars($pos['dusun']) ?>
+                      </div>
+                      <p class="font-xs text-muted-posyandu mb-2">
+                        <?= htmlspecialchars($pos['lokasi_alamat']) ?>
+                      </p>
+                    </div>
+                    <div class="pt-2 border-top font-xs text-forest">
+                      <div class="mb-1"><i class="bi bi-clock me-1 text-primary"></i> <?= htmlspecialchars($pos['jadwal_rutin']) ?></div>
+                      <div><i class="bi bi-person me-1 text-primary"></i> PJ: <strong><?= htmlspecialchars($pos['kader_utama']) ?></strong></div>
+                    </div>
+                  </div>
+                </div>
+              <?php endforeach; ?>
             </div>
           </div>
-        </div>
+        <?php endif; ?>
       </div>
 
       <div class="pt-5 mt-5 border-top" id="kalkulator">

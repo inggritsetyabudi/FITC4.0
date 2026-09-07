@@ -10,32 +10,26 @@ function current_user(): ?array {
 }
 
 function is_logged_in(): bool {
-    return isset($_SESSION['user']) && !empty($_SESSION['user']['id']);
+    return !empty($_SESSION['user']['id']);
 }
 
 function has_role(string|array $roles): bool {
     $user = current_user();
     if (!$user) return false;
-    
-    if (is_string($roles)) {
-        $roles = [$roles];
-    }
+    $roles = (array)$roles;
     return in_array($user['role'], $roles, true);
 }
 
 function require_auth(string|array $allowedRoles = []): array {
     if (!is_logged_in()) {
-        $loginUrl = base_url('login.php');
-        header("Location: $loginUrl");
+        header("Location: " . base_url('login.php'));
         exit;
     }
 
     $user = current_user();
-    if (!empty($allowedRoles)) {
-        if (!has_role($allowedRoles)) {
-            redirect_to_dashboard($user['role']);
-            exit;
-        }
+    if (!empty($allowedRoles) && !has_role($allowedRoles)) {
+        redirect_to_dashboard($user['role']);
+        exit;
     }
 
     return $user;
@@ -47,13 +41,8 @@ function login_user_by_credentials(string $username, string $password): array {
     $stmt->execute([$username]);
     $user = $stmt->fetch();
 
-    if (!$user) {
-        return ['success' => false, 'message' => 'Nama pengguna tidak terdaftar.'];
-    }
-
-    $valid = password_verify($password, $user['password']) || ($password === '123');
-    if (!$valid) {
-        return ['success' => false, 'message' => 'Kata sandi tidak sesuai.'];
+    if (!$user || !password_verify($password, $user['password'])) {
+        return ['success' => false, 'message' => 'Username atau kata sandi tidak sesuai.'];
     }
 
     $_SESSION['user'] = [
@@ -104,26 +93,11 @@ function redirect_to_dashboard(?string $role = null): void {
 
 if (!function_exists('base_url')) {
     function base_url(string $path = ''): string {
-        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-        $dir = dirname($scriptName);
-
-        $base = rtrim(str_replace('\\', '/', $dir), '/');
-
-        while (
-            str_contains($base, '/pages') || 
-            str_contains($base, '/config') || 
-            str_contains($base, '/includes') ||
-            str_contains($base, '/controllers') ||
-            str_contains($base, '/views') ||
-            str_contains($base, '/models')
-        ) {
-            $base = dirname($base);
+        $script = $_SERVER['SCRIPT_NAME'] ?? '';
+        $root = rtrim(dirname($script), '/\\');
+        if ($root === '/' || $root === '\\' || $root === '.') {
+            $root = '';
         }
-        
-        $cleanPath = ltrim(str_replace('\\', '/', $path), '/');
-        if ($base === '' || $base === '.') {
-            return '/' . $cleanPath;
-        }
-        return $base . '/' . $cleanPath;
+        return $root . '/' . ltrim($path, '/');
     }
 }

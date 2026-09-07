@@ -4,28 +4,45 @@ require_once __DIR__ . '/auth.php';
 
 if (!function_exists('base_url')) {
     function base_url(string $path = ''): string {
-        $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
-        $dir = dirname($scriptName);
-
-        $base = rtrim(str_replace('\\', '/', $dir), '/');
-
-        while (
-            str_contains($base, '/pages') || 
-            str_contains($base, '/config') || 
-            str_contains($base, '/includes') ||
-            str_contains($base, '/controllers') ||
-            str_contains($base, '/views') ||
-            str_contains($base, '/models')
-        ) {
-            $base = dirname($base);
+        $script = $_SERVER['SCRIPT_NAME'] ?? '';
+        $root = rtrim(dirname($script), '/\\');
+        if ($root === '/' || $root === '\\' || $root === '.') {
+            $root = '';
         }
-        
-        $cleanPath = ltrim(str_replace('\\', '/', $path), '/');
-        if ($base === '' || $base === '.') {
-            return '/' . $cleanPath;
-        }
-        return $base . '/' . $cleanPath;
+        return $root . '/' . ltrim($path, '/');
     }
+}
+
+function upload_asset(array $file, string $prefix = 'berita', ?string $id = null): ?string {
+    if (empty($file['tmp_name']) || ($file['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+        return null;
+    }
+
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $allowed = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'];
+    if (!in_array($ext, $allowed, true)) {
+        return null;
+    }
+
+    $idFile = $id ?: (time() . '_' . bin2hex(random_bytes(3)));
+    $filename = "{$prefix}_{$idFile}.{$ext}";
+    $targetDir = dirname(__DIR__) . '/assets';
+
+    if (!is_dir($targetDir)) {
+        mkdir($targetDir, 0777, true);
+    }
+
+    $targetPath = $targetDir . '/' . $filename;
+    if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+        return '/assets/' . $filename;
+    }
+
+    return null;
+}
+
+function asset_url(?string $path): string {
+    if (!$path) return '';
+    return base_url($path);
 }
 
 function format_tanggal_id(?string $dateStr, bool $short = false): string {
@@ -49,10 +66,7 @@ function format_tanggal_id(?string $dateStr, bool $short = false): string {
     $m = (int)date('n', $time);
     $y = date('Y', $time);
 
-    if ($short) {
-        return "$d " . ($bulanShort[$m] ?? '') . " $y";
-    }
-    return "$d " . ($bulan[$m] ?? '') . " $y";
+    return "$d " . ($short ? ($bulanShort[$m] ?? '') : ($bulan[$m] ?? '')) . " $y";
 }
 
 function hitung_umur(string $tanggalLahir, ?string $tanggalUkur = null): array {
@@ -164,14 +178,6 @@ function evaluasi_status_pengukuran(array $anak, float $bb, float $tb, array $ri
                 $rekomendasi = 'Kenaikan berat badan tidak adekuat selama 2 bulan berturut-turut. Disarankan peninjauan khusus oleh Bidan Desa.';
             }
         }
-    }
-
-    if (str_contains($anak['nama'], 'Dinda Aulia')) {
-        $status = 'pemantauan';
-        $rekomendasi = 'Pertumbuhan perlu ditinjau kembali pada kunjungan berikutnya.';
-    } elseif (str_contains($anak['nama'], 'Farel Aditya')) {
-        $status = 'prioritas';
-        $rekomendasi = 'BB turun dalam 2 bulan berturut-turut. Segera lakukan konseling gizi dan evaluasi bidan.';
     }
 
     return [

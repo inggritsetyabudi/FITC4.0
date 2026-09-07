@@ -20,7 +20,8 @@ class BerandaController
     public function index(): void
     {
         $daftarBerita = $this->beritaModel->getPublished(6);
-        $jadwalDusun = $this->dusunModel->getJadwal();
+        $jadwalPosyandu = $this->dusunModel->getJadwal();
+        $posLayanan = $this->dusunModel->getPosyanduPos();
         $pageTitle = 'Posyandu Pintar — Layanan Tumbuh Kembang & Skrining Balita Desa';
         $pageDesc = 'Sistem digital pencatatan tumbuh kembang balita dan pemantauan pertumbuhan untuk Posyandu desa.';
 

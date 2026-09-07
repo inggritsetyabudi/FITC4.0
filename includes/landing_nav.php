@@ -20,7 +20,7 @@ $currentUser = current_user();
         <ul class="landing-menu">
           <li><a href="<?= base_url('index.php#beranda') ?>">Beranda</a></li>
           <li><a href="<?= base_url('index.php#tentang') ?>">Tentang Kami</a></li>
-          <li><a href="<?= base_url('index.php#layanan') ?>">Layanan</a></li>
+          <li><a href="<?= base_url('index.php#jadwal') ?>">Jadwal Posyandu</a></li>
           <li><a href="<?= base_url('index.php#blog') ?>">Blog</a></li>
           <li><a href="<?= base_url('index.php#berita') ?>">Berita</a></li>
         </ul>

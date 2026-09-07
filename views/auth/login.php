@@ -62,7 +62,7 @@ require_once __DIR__ . '/../../includes/header.php';
             name="username"
             id="inputUsername"
             class="form-control-posyandu"
-            placeholder="Contoh: kader / bidan / admin"
+            placeholder="Masukkan nama pengguna"
             value="<?= htmlspecialchars($username ?? '') ?>"
             autocomplete="username"
             required
@@ -97,65 +97,8 @@ require_once __DIR__ . '/../../includes/header.php';
           Kembali ke Beranda
         </a>
       </form>
-
-      <div class="demo-account-box">
-        <div class="demo-account-title">
-          <i class="bi bi-person-badge"></i> Akun Demo Cepat (Klik untuk Mengisi)
-        </div>
-
-        <div class="demo-chips">
-          <button
-            type="button"
-            class="demo-chip js-demo-chip"
-            data-user="kader"
-            data-pass="123"
-          >
-            Kader (Bu Sari)
-          </button>
-
-          <button
-            type="button"
-            class="demo-chip js-demo-chip"
-            data-user="bidan"
-            data-pass="123"
-          >
-            Bidan (Bidan Siti)
-          </button>
-
-          <button
-            type="button"
-            class="demo-chip js-demo-chip"
-            data-user="admin"
-            data-pass="123"
-          >
-            Admin Desa
-          </button>
-        </div>
-      </div>
     </div>
   </div>
 </div>
-
-<script>
-  document.querySelectorAll('.js-demo-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const user = chip.getAttribute('data-user');
-      const pass = chip.getAttribute('data-pass');
-      const userInput = document.getElementById('inputUsername');
-      const passInput = document.getElementById('inputPassword');
-
-      if (userInput && passInput) {
-        userInput.value = user;
-        passInput.value = pass;
-        userInput.classList.add('border-success');
-        passInput.classList.add('border-success');
-        setTimeout(() => {
-          userInput.classList.remove('border-success');
-          passInput.classList.remove('border-success');
-        }, 600);
-      }
-    });
-  });
-</script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
