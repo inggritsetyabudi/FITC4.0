@@ -275,14 +275,6 @@ $jabatanPenandatangan = $jabatanPenandatangan ?? 'Kepala Desa Sukatani';
           <div class="stat-number"><?= $stats['total_balita'] ?? 0 ?></div>
         </div>
         <div class="stat-box">
-          <div class="stat-label">Ibu Hamil</div>
-          <div class="stat-number"><?= $stats['total_bumil'] ?? 0 ?></div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">Lansia Binaan</div>
-          <div class="stat-number"><?= $stats['total_lansia'] ?? 0 ?></div>
-        </div>
-        <div class="stat-box">
           <div class="stat-label">Kader &amp; Bidan</div>
           <div class="stat-number"><?= ($stats['total_kader'] ?? 0) + ($stats['total_bidan'] ?? 0) ?></div>
         </div>

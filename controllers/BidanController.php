@@ -69,6 +69,49 @@ class BidanController
         require_once __DIR__ . '/../views/bidan/prioritas.php';
     }
 
+    public function export(): void
+    {
+        $user = require_auth(['bidan', 'admin', 'kader']);
+
+        $bulan = trim($_GET['bulan'] ?? date('Y-m'));
+        $filterDusun = trim($_GET['dusun'] ?? '');
+        $dataRekap = $this->pengukuranModel->getRekapBulanan($bulan, $filterDusun);
+
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=Rekap_Balita_' . $bulan . '.csv');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, ['No', 'Nama Balita', 'NIK', 'Tgl Lahir', 'JK', 'Nama Orang Tua', 'Dusun', 'Tgl Ukur', 'Usia (Bulan)', 'BB (kg)', 'TB (cm)', 'Status Gizi', 'Catatan']);
+
+        $no = 1;
+        foreach ($dataRekap as $r) {
+            fputcsv($output, [
+                $no++, $r['nama'], $r['nik'] ? "'" . $r['nik'] : '-', $r['tanggal_lahir'],
+                $r['jenis_kelamin'], $r['nama_ortu'], $r['dusun'], $r['tanggal_ukur'] ?: 'Belum Ukur',
+                $r['usia_bulan'] ?? '-', $r['berat_kg'] ?? '-', $r['tinggi_cm'] ?? '-',
+                $r['kategori_status'] ? ucfirst($r['kategori_status']) : 'Belum Ditimbang', $r['catatan'] ?? '-'
+            ]);
+        }
+        fclose($output);
+        exit;
+    }
+
+    public function export_pdf(): void
+    {
+        $user = require_auth(['bidan', 'admin']);
+        $bulan = trim($_GET['bulan'] ?? date('Y-m'));
+        $filterDusun = trim($_GET['dusun'] ?? '');
+        $dataRekap = $this->pengukuranModel->getRekapBulanan($bulan, $filterDusun ?: null);
+
+        $tipeLaporan = 'Laporan Hasil Penimbangan & Evaluasi Pertumbuhan Balita Desa';
+        $tanggalCetak = format_tanggal_id(date('Y-m-d'));
+        $nomorSurat = '028/BIDAN/POSYANDU/' . date('Y');
+        $namaPenandatangan = $user['nama'] ?? 'Bidan Desa';
+        $jabatanPenandatangan = 'Bidan Desa Sukatani';
+
+        require __DIR__ . '/../views/shared/cetak_laporan_pdf.php';
+    }
+
     public function rekap(): void
     {
         $user = require_auth(['bidan', 'admin', 'kader']);
@@ -85,58 +128,5 @@ class BidanController
         $breadcrumb = '<a href="' . base_url('index.php?controller=bidan&action=dashboard') . '" class="text-decoration-none text-forest">Dasbor</a> <i class="bi bi-chevron-right fs-xs"></i> <span>Rekap Data</span>';
 
         require_once __DIR__ . '/../views/bidan/rekap.php';
-    }
-
-    public function export(): void
-    {
-        $user = require_auth(['bidan', 'admin', 'kader']);
-
-        $bulan = trim($_GET['bulan'] ?? '2026-08');
-        $filterDusun = trim($_GET['dusun'] ?? '');
-
-        $dataRekap = $this->pengukuranModel->getRekapBulanan($bulan, $filterDusun);
-
-        header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename=Rekap_Posyandu_' . $bulan . '.csv');
-
-        $output = fopen('php://output', 'w');
-        fputcsv($output, ['No', 'Nama Balita', 'NIK', 'Tgl Lahir', 'JK', 'Nama Orang Tua', 'Dusun', 'Tgl Ukur', 'Usia (Bulan)', 'BB (kg)', 'TB (cm)', 'Status Gizi', 'Catatan']);
-
-        $no = 1;
-        foreach ($dataRekap as $r) {
-            fputcsv($output, [
-                $no++,
-                $r['nama'],
-                $r['nik'] ? "'" . $r['nik'] : '-',
-                $r['tanggal_lahir'],
-                $r['jenis_kelamin'],
-                $r['nama_ortu'],
-                $r['dusun'],
-                $r['tanggal_ukur'] ?: 'Belum Ukur',
-                $r['usia_bulan'] ?? '-',
-                $r['berat_kg'] ?? '-',
-                $r['tinggi_cm'] ?? '-',
-                $r['kategori_status'] ? ucfirst($r['kategori_status']) : 'Belum Ditimbang',
-                $r['catatan'] ?? '-'
-            ]);
-        }
-        fclose($output);
-        exit;
-    }
-
-    public function export_pdf(): void
-    {
-        $user = require_auth(['bidan', 'admin']);
-        $bulan = $_GET['bulan'] ?? '2026-08';
-        $filterDusun = $_GET['dusun'] ?? '';
-        $dataRekap = $this->pengukuranModel->getRekapBulanan($bulan, $filterDusun ?: null);
-
-        $tipeLaporan = 'Laporan Hasil Penimbangan & Evaluasi Pertumbuhan Balita Desa';
-        $tanggalCetak = format_tanggal_id(date('Y-m-d'));
-        $nomorSurat = '028/BIDAN/POSYANDU/' . date('Y');
-        $namaPenandatangan = $user['nama'] ?? 'Bidan Siti, S.Tr.Keb';
-        $jabatanPenandatangan = 'Bidan Desa Sukatani';
-
-        require __DIR__ . '/../views/shared/cetak_laporan_pdf.php';
     }
 }

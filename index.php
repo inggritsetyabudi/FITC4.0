@@ -37,34 +37,12 @@ if (!$controller && $action) {
             };
             $action = 'dashboard';
             break;
-        case 'penduduk':
-        case 'ibu_hamil':
-        case 'lansia':
-        case 'posyandu':
-        case 'pemeriksaan':
         case 'jadwal':
-        case 'kegiatan':
-        case 'laporan':
-        case 'notifikasi':
-        case 'users':
-        case 'profil_desa':
-        case 'audit_log':
-        case 'backup':
-            $controller = 'admin';
-            break;
-        case 'export_pdf':
-            $role = current_user()['role'] ?? 'admin';
-            $controller = ($role === 'bidan') ? 'bidan' : 'admin';
-            break;
         case 'kader':
-            $role = current_user()['role'] ?? 'kader';
-            if ($role === 'admin') {
-                $controller = 'admin';
-                $action = 'kader';
-            } else {
-                $controller = 'kader';
-                $action = 'dashboard';
-            }
+        case 'laporan':
+        case 'export_pdf':
+        case 'export_csv':
+            $controller = 'admin';
             break;
         case 'bidan':
             $controller = 'bidan';
@@ -223,47 +201,14 @@ switch ($controller) {
             case 'dashboard':
                 $adminController->dashboard();
                 break;
-            case 'penduduk':
-                $adminController->penduduk();
-                break;
             case 'kader':
                 $adminController->kader();
-                break;
-            case 'posyandu':
-                $adminController->posyandu();
-                break;
-            case 'ibu_hamil':
-                $adminController->ibu_hamil();
-                break;
-            case 'lansia':
-                $adminController->lansia();
-                break;
-            case 'pemeriksaan':
-                $adminController->pemeriksaan();
                 break;
             case 'jadwal':
                 $adminController->jadwal();
                 break;
-            case 'kegiatan':
-                $adminController->kegiatan();
-                break;
             case 'laporan':
                 $adminController->laporan();
-                break;
-            case 'notifikasi':
-                $adminController->notifikasi();
-                break;
-            case 'users':
-                $adminController->users();
-                break;
-            case 'profil_desa':
-                $adminController->profil_desa();
-                break;
-            case 'audit_log':
-                $adminController->audit_log();
-                break;
-            case 'backup':
-                $adminController->backup();
                 break;
             case 'export_pdf':
                 $adminController->export_pdf();

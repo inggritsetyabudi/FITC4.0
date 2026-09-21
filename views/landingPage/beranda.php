@@ -174,7 +174,7 @@ require_once __DIR__ . '/../../includes/landing_nav.php';
           <span class="badge rounded-pill bg-primary-subtle text-primary border px-3 py-2 fw-bold mb-2" style="font-size: 0.9rem;">Agenda Terpadu Desa</span>
           <h3 class="h1 text-forest fw-bold mb-3" style="font-size: 2.2rem;">Jadwal Pelayanan Posyandu</h3>
           <p class="text-ink-700" style="font-size: 1.15rem; line-height: 1.7;">
-            Informasi resmi pelaksanaan penimbangan balita, imunisasi, pemeriksaan ibu hamil, dan posbindu lansia yang terhubung langsung dengan sistem desa.
+            Informasi resmi jadwal penimbangan dan pemantauan tumbuh kembang balita yang terhubung langsung dengan sistem desa.
           </p>
         </div>
 
@@ -486,7 +486,7 @@ require_once __DIR__ . '/../../includes/landing_nav.php';
       <div class="text-center max-w-700 mx-auto mb-5">
         <h2 class="h1 fw-bold text-forest mb-2">Berita &amp; Kegiatan Posyandu</h2>
         <p class="text-ink-700" style="font-size: 1.05rem; line-height: 1.6;">
-          Pengumuman jadwal posyandu dusun, kegiatan penimbangan serentak, dan kabar kesehatan masyarakat Desa Sukatani.
+          Pengumuman jadwal posyandu, kegiatan penimbangan balita, dan informasi gizi anak Desa Sukatani.
         </p>
       </div>
 

@@ -15,20 +15,9 @@ require_once __DIR__ . '/../../includes/header.php';
     <?php require_once __DIR__ . '/../../includes/topbar.php'; ?>
 
     <main class="app-content">
-      <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
-        <div>
-          <h2 class="h3 text-forest mb-1">Rekapitulasi Pengukuran Desa</h2>
-          <p class="text-muted-posyandu mb-0">Total <?= count($rekapRows) ?> riwayat penimbangan tercatat</p>
-        </div>
-
-        <div class="d-flex gap-2">
-          <a href="<?= base_url('index.php?controller=bidan&action=export_pdf&bulan=' . urlencode($bulan ?? '2026-08') . '&dusun=' . urlencode($filterDusun ?? '')) ?>" target="_blank" class="btn-posyandu-primary">
-            <i class="bi bi-file-earmark-pdf"></i> Ekspor PDF
-          </a>
-          <a href="<?= base_url('index.php?controller=bidan&action=export&bulan=' . urlencode($bulan ?? '2026-08') . '&dusun=' . urlencode($filterDusun ?? '')) ?>" class="btn-posyandu-outline">
-            <i class="bi bi-file-earmark-arrow-down"></i> Ekspor CSV
-          </a>
-        </div>
+      <div class="mb-4">
+        <h2 class="h3 text-forest mb-1">Rekapitulasi Pengukuran Desa</h2>
+        <p class="text-muted-posyandu mb-0">Total <?= count($rekapRows) ?> riwayat penimbangan tercatat</p>
       </div>
 
       <div class="panel-posyandu mb-4 p-3">
@@ -54,10 +43,16 @@ require_once __DIR__ . '/../../includes/header.php';
             </select>
           </div>
 
-          <div class="col-md-3 d-flex gap-2">
+          <div class="col-md-3 d-flex gap-2 flex-wrap">
             <button type="submit" class="btn btn-sm btn-posyandu-primary flex-fill">
               Filter
             </button>
+            <a target="_blank" href="<?= base_url('index.php?controller=bidan&action=export_pdf&bulan=' . urlencode($bulan ?? date('Y-m')) . '&dusun=' . urlencode($filterDusun ?? '')) ?>" class="btn btn-sm btn-posyandu-outline">
+              <i class="bi bi-file-earmark-pdf"></i> PDF
+            </a>
+            <a href="<?= base_url('index.php?controller=bidan&action=export&bulan=' . urlencode($bulan ?? date('Y-m')) . '&dusun=' . urlencode($filterDusun ?? '')) ?>" class="btn btn-sm btn-posyandu-outline">
+              <i class="bi bi-file-earmark-arrow-down"></i> CSV
+            </a>
             <?php if (($filterDusun ?? '') !== '' && ($filterDusun ?? '') !== 'semua'): ?>
               <a href="<?= base_url('index.php?controller=bidan&action=rekap') ?>" class="btn btn-sm btn-posyandu-outline">
                 Reset

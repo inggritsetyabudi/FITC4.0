@@ -140,11 +140,10 @@ require_once __DIR__ . '/../../includes/header.php';
             <div class="col-sm-6">
               <label class="form-label font-xs fw-semibold">Jenis Layanan</label>
               <select name="jenis_layanan" class="form-select-posyandu">
+                <option value="Penimbangan Balita">Penimbangan Balita</option>
                 <option value="Penimbangan & Imunisasi">Penimbangan &amp; Imunisasi</option>
-                <option value="Posbindu Lansia">Posbindu Lansia</option>
-                <option value="Pemeriksaan Ibu Hamil">Pemeriksaan Ibu Hamil</option>
-                <option value="Pemberian PMT">Pemberian PMT Pemulihan</option>
-                <option value="Penyuluhan Kesehatan">Penyuluhan Kesehatan</option>
+                <option value="Pemberian PMT">Pemberian PMT Balita</option>
+                <option value="Edukasi Gizi Balita">Edukasi Gizi Balita</option>
               </select>
             </div>
             <div class="col-sm-6">

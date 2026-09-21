@@ -1,3 +1,10 @@
+
+## Edisi Lomba — Fokus Balita
+
+Versi ini memfokuskan sistem hanya pada pemantauan pertumbuhan balita agar alur PHP lebih sederhana untuk live coding. Modul ibu hamil, lansia, penduduk umum, audit, backup, notifikasi, dan laporan ekspor dihapus dari alur aplikasi.
+
+Alur utama: Data Balita → Pengukuran → Status Pertumbuhan → Pemantauan Bidan.
+
 # Posyandu Pintar — Frontend Redesign & Application
 ## FITCOM 4.0 — Intelligent Home & Community
 
