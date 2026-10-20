@@ -191,7 +191,7 @@ function ambil_daftar_dusun(): array {
     return [
         'Gamping Wetan',
         'Boharan',
-        'Kasengan',
+        'Kemangsen',
         'Bendomungal'
     ];
 }
