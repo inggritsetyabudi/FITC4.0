@@ -1,129 +1,55 @@
-# Posyandu Pintar — Sistem Pencatatan Tumbuh Kembang Balita
+# Posyandu Pintar
 
-**FITCOM 4.0 — Intelligent Home & Community**
+Aplikasi pencatatan data balita, pengukuran bulanan, jadwal posyandu, dan laporan desa.
 
-> *Tumbuh mereka berubah setiap bulan. Catatannya jangan sampai tertinggal.*
+Frontend menggunakan React, TypeScript, Vite, dan Tailwind CSS. API berada di folder `api/` dan menggunakan PHP dengan MySQL.
 
-Posyandu Pintar adalah aplikasi web fullstack untuk pencatatan tumbuh kembang balita dan skrining gizi berbasis aturan (*rule-based screening*) di posyandu desa. Menggantikan buku KMS fisik yang rentan tercecer dan sulit dibandingkan antar bulan.
+## Menjalankan frontend
 
-Dibangun dengan **PHP Native (MVC)**, **MySQL**, **Bootstrap 5**, dan **Chart.js**.
-
----
-
-## Fitur Utama
-
-### Kader Posyandu
-- **Dasbor tugas** — daftar balita yang *belum ditimbang bulan ini* langsung tampil di atas.
-- **Pencatatan pengukuran cepat** — umur dihitung otomatis dari tanggal lahir, tanpa manual.
-- **Skrining otomatis** — status gizi (*Normal / Perlu Pemantauan / Prioritas*) langsung muncul setelah input, disertai catatan penjelasan.
-- **Deteksi anomali input** — peringatan bila berat/tinggi turun drastis dari bulan sebelumnya (misal salah ketik).
-
-### Bidan Desa
-- **Decision-first** — daftar balita prioritas tampil paling atas sebelum grafik analitik.
-- **Analitik desa** — distribusi status gizi per dusun dan cakupan penimbangan 6 bulan.
-- **Kurva pertumbuhan** — grafik garis BB/TB per balita ala buku KMS.
-- **Rekap & unduh** — rekapitulasi bulanan dengan filter dusun, ekspor CSV dan PDF.
-
-### Admin Desa
-- **CRUD lengkap** — penduduk, balita, ibu hamil, lansia, posyandu, jadwal, kegiatan, user.
-- **Laporan terpadu** — ringkasan sistem, unduh laporan PDF/CSV, backup data JSON.
-- **Audit log** — pencatatan otomatis setiap aksi untuk transparansi.
-- **Pengumuman** — notifikasi broadcast ke kader/bidan/warga.
-
-### Publik
-- Landing page edukasi + artikel kesehatan (*read-only*).
-
----
-
-## Teknologi
-
-| Bagian | Teknologi |
-| :--- | :--- |
-| Backend | PHP Native (arsitektur MVC tanpa framework) |
-| Database | MySQL / MariaDB (PDO + prepared statements) |
-| Frontend | Bootstrap 5, Chart.js, ikon Bootstrap |
-| Server lokal | Laragon (Apache + MySQL) |
-
----
-
-## Struktur Direktori
-
-```
-FITC4.0/
-├── index.php            # Front controller & router (controller/action)
-├── config/
-│   ├── database.php     # Koneksi PDO (auto-create database)
-│   ├── auth.php         # Session, RBAC (require_auth)
-│   └── helpers.php      # base_url, hitung_umur, skrining & anomali
-├── controllers/         # Auth, Beranda, Kader, Bidan, Admin, dll.
-├── models/              # User, Anak, Pengukuran, Dusun, Berita, AdminModel
-├── views/               # landingPage, kader, bidan, admin, shared, components
-├── database/
-│   └── posyandu_pintar.sql   # Schema + seed data
-├── assets/              # CSS, gambar, JS komponen & mock data legacy
-├── docs/                # design-system, ui-flow, mock-data, responsive
-└── README.md
+```sh
+npm ci
+npm run dev
 ```
 
----
+Vite berjalan di `http://localhost:5173`. Permintaan ke `/api` diteruskan ke `http://127.0.0.1:8000`.
 
-## Mulai Cepat
-
-### 1. Siapkan Database
-Import `database/posyandu_pintar.sql` lewat phpMyAdmin/DBeaver, atau:
-
-```bash
-mysql -u root < database/posyandu_pintar.sql
+```sh
+npm run build
+npm run preview
 ```
 
-Database `posyandu_pintar`, 12 tabel, dan data demo akan terbuat otomatis.
+## Menjalankan API
 
-### 2. Jalankan
-Letakkan proyek di folder `www` Laragon dan aktifkan MySQL, lalu buka:
+Aktifkan MySQL, lalu jalankan:
 
-```
-http://fitc4.0.test/
-```
-
-atau via port konfigurasi Laragon di `http://localhost/FITC4.0/`.
-
----
-
-## Akun Demo
-
-Kredensial di bawah (kata sandi semua: `123`):
-
-| Peran | Nama Pengguna | Kredensial & Wilayah |
-| :--- | :--- | :--- |
-| **Kader** | `kader1` | Bu Sari — Dusun Gamping Wetan |
-| **Bidan** | `bidan` | Bidan Siti — Desa Sukatani |
-| **Admin** | `admin` | Pemerintah Desa Sukatani |
-
----
-
-## Alur Demo Singkat
-
-1. **Kader** masuk → pilih balita dari daftar *belum ditimbang* → input BB & TB → sistem menampilkan status skrining otomatis.
-2. Ganti ke **Bidan** → daftar balita prioritas tampil di atas → cek grafik distribusi per dusun & cakupan penimbangan.
-3. Buka **Rekap** → filter dusun → **Ekspor CSV / PDF**.
-4. Masuk **Admin** → kelola data desa dari satu panel, cek **Audit Log**, unduh laporan.
-
----
-
-## Skema Database
-
-```
-users ──┬── anak ──── pengukuran   (riwayat timbangan, kategori_status)
-        └── berita                  (penulis)
-warga    | ibu_hamil | lansia      (master data sasaran program)
-posyandu_pos | jadwal_kegiatan      (operasional pos)
-notifikasi | audit_logs | profil_desa
+```sh
+php -S 127.0.0.1:8000 -t api api/index.php
 ```
 
-Semua status (role, kategori gizi, status kehamilan, dll.) dibatasi oleh `ENUM` sehingga nilai yang masuk selalu valid. Detail lengkap dan catatan desain ada di komentar file `database/posyandu_pintar.sql`.
+Koneksi database menggunakan variabel lingkungan `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, dan `DB_PASS`. Nilai bawaan: `127.0.0.1:3306`, database `posyandu_pintar`, pengguna `root`, tanpa kata sandi. Tabel dan data awal dibuat saat koneksi pertama.
 
----
+## Penggunaan
 
-## Kontributor
-- **Rafi Ahmad Fairuz** — Developer FITCOM 4.0
-- Dokumen desain UI: lihat folder `docs/`
+- **Kader:** data balita dan pencatatan pengukuran.
+- **Bidan:** tinjauan balita prioritas dan rekap pengukuran.
+- **Admin:** petugas, jadwal, dan laporan.
+
+Halaman login menyediakan pilihan akun demo. Jika API tidak tersedia, aplikasi menggunakan data demo di localStorage. Sejumlah aksi pengelolaan akun masih berupa simulasi.
+
+Hasil kalkulator KMS diperbarui setelah formulir dikirim. Perhitungannya masih berupa estimasi sederhana.
+
+## Struktur
+
+```text
+src/pages/              Halaman aplikasi
+src/components/         Layout dan komponen bersama
+src/context/            State autentikasi
+src/services/api.ts     Akses API dan penyimpanan lokal
+src/types/              Tipe data
+src/utils/              Helper dan data demo
+src/assets/fonts/       Font dan ikon lokal
+public/images/          Gambar yang digunakan aplikasi
+api/                    Router, konfigurasi, dan model PHP
+```
+
+Lisensi Inter dan Bootstrap Icons disertakan bersama asetnya.
