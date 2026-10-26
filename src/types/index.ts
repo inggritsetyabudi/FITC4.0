@@ -7,6 +7,7 @@ export interface User {
   role: UserRole;
   dusun_binaan?: string | null;
   telepon?: string | null;
+  created_at?: string;
 }
 
 export type StatusGizi = 'normal' | 'pemantauan' | 'prioritas' | 'berisiko';
@@ -19,7 +20,6 @@ export interface Balita {
   jenis_kelamin: 'L' | 'P';
   nama_ortu: string;
   dusun: string;
-  kader_id?: number;
   status?: 'aktif' | 'nonaktif';
   status_terakhir?: StatusGizi | null;
   berat_terakhir?: number | null;
@@ -47,10 +47,12 @@ export interface Berita {
   id: number;
   judul: string;
   kategori: string;
+  tipe?: 'blog' | 'berita';
   ringkasan: string;
   isi: string;
-  gambar?: string;
-  published_at?: string;
+  gambar?: string | null;
+  status?: 'draft' | 'published';
+  published_at?: string | null;
   penulis?: string;
   waktu_baca?: string;
 }

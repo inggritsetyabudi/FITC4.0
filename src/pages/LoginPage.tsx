@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import type { UserRole } from '../types';
 
-export const LoginPage: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
+export const LoginPage: React.FC = () => {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -15,14 +17,10 @@ export const LoginPage: React.FC<{ onNavigate: (page: string) => void }> = ({ on
     setLoading(true);
 
     try {
-      const ok = await login(username, password);
-      if (ok) {
-        onNavigate('dashboard');
-      } else {
-        setErrorMsg('Nama pengguna atau kata sandi tidak valid.');
-      }
-    } catch {
-      setErrorMsg('Gagal terhubung ke layanan server.');
+      await login(username, password);
+      navigate('/dashboard');
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Gagal terhubung ke layanan server.');
     } finally {
       setLoading(false);
     }
@@ -34,10 +32,10 @@ export const LoginPage: React.FC<{ onNavigate: (page: string) => void }> = ({ on
     setLoading(true);
     setErrorMsg('');
     try {
-      const ok = await login(role, '123');
-      if (ok) {
-        onNavigate('dashboard');
-      }
+      await login(role, '123');
+      navigate('/dashboard');
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : 'Gagal terhubung ke layanan server.');
     } finally {
       setLoading(false);
     }
@@ -55,7 +53,7 @@ export const LoginPage: React.FC<{ onNavigate: (page: string) => void }> = ({ on
 
         <div className="login-photo-content relative z-10 p-12 lg:p-16 flex flex-col justify-between h-full text-white">
           <button
-            onClick={() => onNavigate('landing')}
+            onClick={() => navigate('/')}
             className="flex items-center gap-3 text-left focus:outline-none w-fit"
           >
             <div className="w-10 h-10 rounded-xl bg-white text-[#0D47A1] flex items-center justify-center text-xl font-bold shadow-md">
@@ -145,7 +143,7 @@ export const LoginPage: React.FC<{ onNavigate: (page: string) => void }> = ({ on
 
             <button
               type="button"
-              onClick={() => onNavigate('landing')}
+              onClick={() => navigate('/')}
               className="w-full py-2.5 px-4 bg-white hover:bg-slate-50 text-ink-700 text-center text-xs font-bold rounded-xl border border-line transition-base"
             >
               Kembali ke Beranda

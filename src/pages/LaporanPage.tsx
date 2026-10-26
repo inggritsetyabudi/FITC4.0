@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { balitaService, pengukuranService } from '../services/api';
-import type { Balita, Pengukuran } from '../types';
+import { useAsyncData } from '../hooks/useAsyncData';
 
-export const LaporanPage: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
-  const [balitaList, setBalitaList] = useState<Balita[]>([]);
-  const [pengukuranList, setPengukuranList] = useState<Pengukuran[]>([]);
+export const LaporanPage: React.FC = () => {
+  const navigate = useNavigate();
   const [bulanInput, setBulanInput] = useState<string>('2026-08');
 
-  useEffect(() => {
-    Promise.all([balitaService.getAll(), pengukuranService.getAll()]).then(([b, p]) => {
-      setBalitaList(b);
-      setPengukuranList(p);
-    });
-  }, []);
+  const { data: balitaList = [] } = useAsyncData(() => balitaService.getAll());
+  const { data: pengukuranList = [], reload } = useAsyncData(
+    () => pengukuranService.getAll(bulanInput),
+    [bulanInput]
+  );
 
   const handleExportCSV = () => {
     const headers = ['ID', 'Nama', 'NIK', 'Tgl Lahir', 'JK', 'Nama Ortu', 'Dusun', 'Status Gizi', 'BB Terakhir (kg)', 'TB Terakhir (cm)'];
@@ -64,7 +63,7 @@ export const LaporanPage: React.FC<{ onNavigate: (page: string) => void }> = ({ 
             className="w-full sm:w-80 px-4 py-2.5 text-xs font-semibold bg-white border border-line rounded-xl focus:outline-none focus:border-[#2196F3]"
           />
           <button
-            onClick={() => {}}
+            onClick={reload}
             className="w-full sm:w-auto px-6 py-2.5 bg-white hover:bg-slate-50 text-[#2196F3] text-xs font-bold rounded-xl border border-[#2196F3] transition-base"
           >
             Tampilkan
@@ -125,7 +124,7 @@ export const LaporanPage: React.FC<{ onNavigate: (page: string) => void }> = ({ 
         </div>
 
         <button
-          onClick={() => onNavigate('rekap')}
+          onClick={() => navigate('/rekap')}
           className="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-slate-50 text-[#2196F3] text-xs font-bold rounded-xl border border-[#2196F3] transition-base"
         >
           Lihat Rekap Lengkap

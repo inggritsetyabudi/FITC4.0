@@ -1,27 +1,63 @@
-import React, { useState, useEffect } from 'react';
-import { dashboardService } from '../services/api';
+import React, { useState } from 'react';
+import { petugasService } from '../services/api';
+import { useAsyncData } from '../hooks/useAsyncData';
+import { DUSUN_LIST } from '../utils/constants';
 import type { User } from '../types';
 
-export const PetugasPage: React.FC<{ onNavigate: (page: string, params?: any) => void }> = () => {
-  const [petugasList, setPetugasList] = useState<User[]>([]);
-  const [showAddModal, setShowAddModal] = useState<boolean>(false);
-  const [resetSuccess, setResetSuccess] = useState<string>('');
+const KOSONG = { nama: '', username: '', password: '', role: 'kader' as User['role'], dusun_binaan: DUSUN_LIST[0] };
 
-  useEffect(() => {
-    dashboardService.getPetugas().then(setPetugasList);
-  }, []);
+export const PetugasPage: React.FC = () => {
+  const { data: petugasList = [], reload } = useAsyncData(() => petugasService.getAll());
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [form, setForm] = useState({ ...KOSONG });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState('');
 
   const bidanList = petugasList.filter((p) => p.role === 'bidan');
   const kaderList = petugasList.filter((p) => p.role === 'kader');
 
-  const handleResetPassword = (name: string) => {
-    setResetSuccess(`Tautan reset kata sandi untuk ${name} berhasil dikirim ke WhatsApp.`);
-    setTimeout(() => setResetSuccess(''), 4000);
+  const set = (key: keyof typeof KOSONG, value: string) => setForm((f) => ({ ...f, [key]: value }));
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
   };
 
-  const handleDeleteKader = (id: number) => {
+  const handleDeleteKader = async (id: number) => {
     if (!window.confirm('Hapus akses kader ini?')) return;
-    setPetugasList((prev) => prev.filter((p) => p.id !== id));
+    try {
+      await petugasService.delete(id);
+      reload();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Gagal menghapus kader.');
+    }
+  };
+
+  const handleAddPetugas = async () => {
+    if (!form.nama || !form.username || !form.password) {
+      setError('Nama, username, dan kata sandi wajib diisi.');
+      return;
+    }
+    setSaving(true);
+    setError('');
+    try {
+      await petugasService.create({
+        nama: form.nama,
+        username: form.username,
+        password: form.password,
+        role: form.role,
+        dusun_binaan: form.role === 'kader' ? form.dusun_binaan : null
+      });
+      setShowAddModal(false);
+      setForm({ ...KOSONG });
+      reload();
+      showToast('Petugas berhasil ditambahkan.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Gagal menambahkan petugas.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -43,10 +79,10 @@ export const PetugasPage: React.FC<{ onNavigate: (page: string, params?: any) =>
         </button>
       </div>
 
-      {resetSuccess && (
+      {toast && (
         <div className="p-4 bg-emerald-50 text-emerald-800 text-xs font-semibold rounded-2xl border border-emerald-200 flex items-center gap-2 shadow-xs">
           <i className="bi bi-check-circle-fill text-emerald-600 text-base"></i>
-          <span>{resetSuccess}</span>
+          <span>{toast}</span>
         </div>
       )}
 
@@ -91,25 +127,15 @@ export const PetugasPage: React.FC<{ onNavigate: (page: string, params?: any) =>
                   <td className="py-3.5 px-4">
                     <span className="font-semibold text-[#2196F3]">@{b.username}</span>
                   </td>
-                  <td className="py-3.5 px-4 text-ink-700">
-                    Seluruh Desa Sukatani
-                  </td>
+                  <td className="py-3.5 px-4 text-ink-700">Seluruh Desa Sukatani</td>
                   <td className="py-3.5 px-4 text-ink-700 whitespace-nowrap">
                     <i className="bi bi-telephone text-ink-400 me-1.5"></i>
-                    <span>{b.telepon || '0812-3456-7892'}</span>
+                    <span>{b.telepon || '-'}</span>
                   </td>
                   <td className="py-3.5 px-4 text-ink-600 whitespace-nowrap">
-                    15 Des 2025
+                    {b.created_at ? new Date(b.created_at).toLocaleDateString('id-ID') : '-'}
                   </td>
-                  <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                    <button
-                      onClick={() => handleResetPassword(b.nama)}
-                      className="px-3 py-1.5 bg-white hover:bg-slate-50 text-[#2196F3] text-xs font-semibold rounded-lg border border-[#2196F3] flex items-center gap-1.5 ml-auto transition-base"
-                    >
-                      <i className="bi bi-key"></i>
-                      <span>Reset Sandi</span>
-                    </button>
-                  </td>
+                  <td className="py-3.5 px-4 text-right whitespace-nowrap"></td>
                 </tr>
               ))}
             </tbody>
@@ -160,32 +186,23 @@ export const PetugasPage: React.FC<{ onNavigate: (page: string, params?: any) =>
                   </td>
                   <td className="py-3.5 px-4 text-ink-700 whitespace-nowrap">
                     <i className="bi bi-geo-alt-fill text-[#2196F3] me-1.5"></i>
-                    <span>Dusun {k.dusun_binaan}</span>
+                    <span>{k.dusun_binaan ? `Dusun ${k.dusun_binaan}` : '-'}</span>
                   </td>
                   <td className="py-3.5 px-4 text-ink-700 whitespace-nowrap">
                     <i className="bi bi-telephone text-ink-400 me-1.5"></i>
-                    <span>{k.telepon || '0812-3456-7890'}</span>
+                    <span>{k.telepon || '-'}</span>
                   </td>
                   <td className="py-3.5 px-4 text-ink-600 whitespace-nowrap">
-                    10 Jan 2026
+                    {k.created_at ? new Date(k.created_at).toLocaleDateString('id-ID') : '-'}
                   </td>
                   <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                    <div className="inline-flex items-center gap-1.5">
-                      <button
-                        onClick={() => handleResetPassword(k.nama)}
-                        className="px-2.5 py-1.5 bg-white hover:bg-slate-50 text-[#2196F3] text-xs font-semibold rounded-lg border border-[#2196F3] flex items-center gap-1 transition-base"
-                      >
-                        <i className="bi bi-key"></i>
-                        <span>Reset</span>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteKader(k.id)}
-                        className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg border border-rose-200 transition-base"
-                        title="Hapus Kader"
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleDeleteKader(k.id)}
+                      className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg border border-rose-200 transition-base"
+                      title="Hapus Kader"
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -195,36 +212,74 @@ export const PetugasPage: React.FC<{ onNavigate: (page: string, params?: any) =>
       </div>
 
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-line shadow-panel space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs overflow-y-auto p-4">
+          <div className="min-h-full flex items-center justify-center">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-line shadow-panel space-y-4">
             <h3 className="text-lg font-extrabold text-[#0D47A1]">Tambah Petugas Posyandu Baru</h3>
             <p className="text-xs text-ink-500">Buat akun untuk kader dusun baru atau tenaga medis penanggung jawab.</p>
+
+            {error && (
+              <div className="p-3 bg-rose-50 text-rose-700 text-xs font-semibold rounded-xl border border-rose-200">
+                {error}
+              </div>
+            )}
+
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-ink-700 uppercase mb-1">Nama Lengkap</label>
                 <input
                   type="text"
+                  value={form.nama}
+                  onChange={(e) => set('nama', e.target.value)}
                   placeholder="Contoh: Siti Fatimah, Amd.Keb"
                   className="w-full px-3 py-2 text-xs border border-line rounded-xl focus:outline-none focus:border-[#2196F3]"
                 />
               </div>
               <div>
+                <label className="block text-xs font-bold text-ink-700 uppercase mb-1">Username</label>
+                <input
+                  type="text"
+                  value={form.username}
+                  onChange={(e) => set('username', e.target.value)}
+                  placeholder="Contoh: kader_gamping"
+                  className="w-full px-3 py-2 text-xs border border-line rounded-xl focus:outline-none focus:border-[#2196F3]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-ink-700 uppercase mb-1">Kata Sandi</label>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => set('password', e.target.value)}
+                  placeholder="Minimal 6 karakter"
+                  className="w-full px-3 py-2 text-xs border border-line rounded-xl focus:outline-none focus:border-[#2196F3]"
+                />
+              </div>
+              <div>
                 <label className="block text-xs font-bold text-ink-700 uppercase mb-1">Peran (Role)</label>
-                <select className="w-full px-3 py-2 text-xs border border-line rounded-xl bg-slate-50">
+                <select
+                  value={form.role}
+                  onChange={(e) => set('role', e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-line rounded-xl bg-slate-50"
+                >
                   <option value="kader">Kader Posyandu</option>
                   <option value="bidan">Bidan Desa</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-ink-700 uppercase mb-1">Wilayah Dusun Binaan</label>
-                <select className="w-full px-3 py-2 text-xs border border-line rounded-xl bg-slate-50">
-                  <option value="Gamping Wetan">Dusun Gamping Wetan</option>
-                  <option value="Gamping Tengah">Dusun Gamping Tengah</option>
-                  <option value="Boharan">Dusun Boharan</option>
-                  <option value="Kasengan">Dusun Kasengan</option>
-                  <option value="Bendomungal">Dusun Bendomungal</option>
-                </select>
-              </div>
+              {form.role === 'kader' && (
+                <div>
+                  <label className="block text-xs font-bold text-ink-700 uppercase mb-1">Wilayah Dusun Binaan</label>
+                  <select
+                    value={form.dusun_binaan}
+                    onChange={(e) => set('dusun_binaan', e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-line rounded-xl bg-slate-50"
+                  >
+                    {DUSUN_LIST.map((d) => (
+                      <option key={d} value={d}>Dusun {d}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="pt-3 flex justify-end gap-2 border-t border-line">
               <button
@@ -236,15 +291,13 @@ export const PetugasPage: React.FC<{ onNavigate: (page: string, params?: any) =>
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setShowAddModal(false);
-                  setResetSuccess('Akun kader baru berhasil ditambahkan.');
-                  setTimeout(() => setResetSuccess(''), 3000);
-                }}
-                className="px-4 py-2 text-xs font-bold bg-[#2196F3] text-white rounded-xl hover:bg-[#1976D2]"
+                onClick={handleAddPetugas}
+                disabled={saving}
+                className="px-4 py-2 text-xs font-bold bg-[#2196F3] text-white rounded-xl hover:bg-[#1976D2] disabled:opacity-60"
               >
-                Simpan Akun
+                {saving ? 'Menyimpan...' : 'Simpan Akun'}
               </button>
+            </div>
             </div>
           </div>
         </div>

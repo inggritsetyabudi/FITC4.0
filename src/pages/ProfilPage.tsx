@@ -1,41 +1,56 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { authService } from '../services/api';
 
-export const ProfilPage: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
-  const { user, logout } = useAuth();
+export const ProfilPage: React.FC = () => {
+  const { user, logout, updateUser } = useAuth();
+  const navigate = useNavigate();
   const [telepon, setTelepon] = useState<string>(user?.telepon || '');
   const [passwordLama, setPasswordLama] = useState<string>('');
   const [passwordBaru, setPasswordBaru] = useState<string>('');
   const [passwordKonfirm, setPasswordKonfirm] = useState<string>('');
   const [successMsg, setSuccessMsg] = useState<string>('');
   const [pwdMsg, setPwdMsg] = useState<string>('');
+  const [pwdError, setPwdError] = useState<string>('');
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (user) {
-      user.telepon = telepon;
-      sessionStorage.setItem('posyandu_auth_user', JSON.stringify(user));
+    if (!user) return;
+    try {
+      const updated = await authService.updateProfile(telepon);
+      updateUser(updated);
       setSuccessMsg('Informasi profil berhasil disimpan.');
       setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err) {
+      setSuccessMsg('');
+      setPwdError(err instanceof Error ? err.message : 'Gagal menyimpan profil.');
     }
   };
 
-  const handleUpdatePassword = (e: React.FormEvent) => {
+  const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPwdError('');
     if (passwordBaru !== passwordKonfirm) {
       setPwdMsg('Kata sandi baru dan konfirmasi tidak cocok.');
       return;
     }
-    setPwdMsg('Kata sandi berhasil diperbarui.');
-    setPasswordLama('');
-    setPasswordBaru('');
-    setPasswordKonfirm('');
-    setTimeout(() => setPwdMsg(''), 3000);
+    try {
+      await authService.changePassword(passwordLama, passwordBaru);
+      setPwdMsg('Kata sandi berhasil diperbarui.');
+      setPasswordLama('');
+      setPasswordBaru('');
+      setPasswordKonfirm('');
+      setTimeout(() => setPwdMsg(''), 3000);
+    } catch (err) {
+      setPwdMsg('');
+      setPwdError(err instanceof Error ? err.message : 'Gagal memperbarui kata sandi.');
+    }
   };
 
-  const handleLogout = () => {
-    logout();
-    onNavigate('login');
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
   return (
@@ -134,6 +149,11 @@ export const ProfilPage: React.FC<{ onNavigate: (page: string) => void }> = ({ o
             {pwdMsg}
           </div>
         )}
+        {pwdError && (
+          <div className="p-3 bg-rose-50 text-rose-700 text-xs font-semibold rounded-xl border border-rose-200">
+            {pwdError}
+          </div>
+        )}
 
         <form onSubmit={handleUpdatePassword} className="space-y-4">
           <div>
@@ -158,7 +178,7 @@ export const ProfilPage: React.FC<{ onNavigate: (page: string) => void }> = ({ o
                 type="password"
                 value={passwordBaru}
                 onChange={(e) => setPasswordBaru(e.target.value)}
-                placeholder="Minimal 3 karakter"
+                placeholder="Minimal 6 karakter"
                 className="w-full px-4 py-2.5 text-xs sm:text-sm bg-white border border-line rounded-xl focus:outline-none focus:border-[#2196F3]"
               />
             </div>

@@ -1,33 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { balitaService, pengukuranService } from '../services/api';
-import type { Balita, Pengukuran } from '../types';
-import { hitungUmurLengkap, formatTanggalId } from '../utils/helpers';
+import { useAsyncData } from '../hooks/useAsyncData';
+import { hitungUmur, formatTanggalId } from '../utils/helpers';
 import { StatusBadge } from '../components/ui/StatusBadge';
 
-export const DetailBalitaPage: React.FC<{
-  id: number;
-  onNavigate: (page: string, params?: any) => void;
-}> = ({ id, onNavigate }) => {
-  const [balita, setBalita] = useState<Balita | null>(null);
-  const [riwayat, setRiwayat] = useState<Pengukuran[]>([]);
+export const DetailBalitaPage: React.FC = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const balitaId = Number(id);
   const [chartMetric, setChartMetric] = useState<'bb' | 'tb'>('bb');
-  const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [b, r] = await Promise.all([
-          balitaService.getById(id),
-          pengukuranService.getByBalitaId(id)
-        ]);
-        setBalita(b || null);
-        setRiwayat(r);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [id]);
+  const { data: balita, loading } = useAsyncData(() => balitaService.getById(balitaId), [balitaId]);
+  const { data: riwayat = [] } = useAsyncData(
+    () => pengukuranService.getByBalitaId(balitaId),
+    [balitaId]
+  );
 
   if (loading) {
     return (
@@ -43,9 +31,9 @@ export const DetailBalitaPage: React.FC<{
       <div className="p-12 text-center bg-white rounded-2xl border border-line space-y-4 max-w-md mx-auto shadow-xs">
         <i className="bi bi-exclamation-circle text-4xl text-amber-500"></i>
         <h2 className="text-lg font-bold text-forest-900">Data Balita Tidak Ditemukan</h2>
-        <p className="text-xs text-ink-500">Balita dengan ID #{id} tidak ada dalam pangkalan data.</p>
+        <p className="text-xs text-ink-500">Balita dengan ID #{balitaId} tidak ada dalam pangkalan data.</p>
         <button
-          onClick={() => onNavigate('balita')}
+          onClick={() => navigate('/balita')}
           className="px-5 py-2 bg-[#2196F3] text-white text-xs font-bold rounded-xl"
         >
           Kembali ke Daftar Balita
@@ -54,7 +42,7 @@ export const DetailBalitaPage: React.FC<{
     );
   }
 
-  const umur = hitungUmurLengkap(balita.tanggal_lahir);
+  const umur = hitungUmur(balita.tanggal_lahir);
   const sortedRiwayat = [...riwayat].sort(
     (a, b) => new Date(a.tanggal_ukur).getTime() - new Date(b.tanggal_ukur).getTime()
   );
@@ -87,7 +75,7 @@ export const DetailBalitaPage: React.FC<{
           </div>
 
           <button
-            onClick={() => onNavigate('pengukuran', { preselectedId: balita.id })}
+            onClick={() => navigate(`/pengukuran?anak=${balita.id}`)}
             className="px-4 py-2 bg-[#2196F3] hover:bg-[#1976D2] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-xs transition-base self-start sm:self-auto"
           >
             <i className="bi bi-clipboard-plus"></i>

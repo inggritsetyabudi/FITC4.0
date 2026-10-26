@@ -1,33 +1,32 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { balitaService, pengukuranService } from '../services/api';
 import type { Balita, StatusGizi } from '../types';
-import { hitungUmurLengkap, formatTanggalId } from '../utils/helpers';
+import { hitungUmur, formatTanggalId } from '../utils/helpers';
 
-export const PengukuranPage: React.FC<{
-  preselectedId?: number;
-  onNavigate: (page: string, params?: any) => void;
-}> = ({ preselectedId, onNavigate }) => {
+export const PengukuranPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
   const [daftarBalita, setDaftarBalita] = useState<Balita[]>([]);
-  const [selectedId, setSelectedId] = useState<number>(preselectedId || 0);
+  const [selectedId, setSelectedId] = useState<number>(Number(searchParams.get('anak')) || 0);
   const [tanggalUkur, setTanggalUkur] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [beratKg, setBeratKg] = useState<string>('');
-  const [tinggiCm, setTinggiCm] = useState<string>('');
-  const [catatan, setCatatan] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-  const [successMsg, setSuccessMsg] = useState<string>('');
-  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [beratKg, setBeratKg] = useState('');
+  const [tinggiCm, setTinggiCm] = useState('');
+  const [catatan, setCatatan] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     balitaService.getAll().then((list) => {
       setDaftarBalita(list);
-      if (!selectedId && list.length > 0) {
-        setSelectedId(list[0].id);
-      }
+      setSelectedId((current) => current || list[0]?.id || 0);
     });
   }, []);
 
   const selectedBalita = daftarBalita.find((b) => b.id === selectedId);
-  const umur = selectedBalita ? hitungUmurLengkap(selectedBalita.tanggal_lahir, tanggalUkur) : null;
+  const umur = selectedBalita ? hitungUmur(selectedBalita.tanggal_lahir, tanggalUkur) : null;
 
   const prevBerat = selectedBalita?.berat_terakhir;
   const prevTinggi = selectedBalita?.tinggi_terakhir;
@@ -70,17 +69,12 @@ export const PengukuranPage: React.FC<{
       });
 
       setSuccessMsg(`Hasil penimbangan untuk ${selectedBalita?.nama} berhasil disimpan.`);
-      setBeratKg('');
-      setTinggiCm('');
-      setCatatan('');
 
       setTimeout(() => {
-        setSuccessMsg('');
-        onNavigate('detail_balita', { id: selectedId });
+        navigate(`/balita/${selectedId}`);
       }, 1500);
     } catch {
       setErrorMsg('Gagal menyimpan hasil pengukuran. Silakan coba kembali.');
-    } finally {
       setLoading(false);
     }
   };

@@ -1,363 +1,429 @@
 <?php
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
-header('Content-Type: application/json; charset=UTF-8');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(200);
-    exit;
-}
-
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/config/helpers.php';
-require_once __DIR__ . '/models/Anak.php';
+require_once __DIR__ . '/models/Balita.php';
 require_once __DIR__ . '/models/Pengukuran.php';
 require_once __DIR__ . '/models/User.php';
 require_once __DIR__ . '/models/Berita.php';
+require_once __DIR__ . '/models/Jadwal.php';
 
-session_start();
+$uri = explode('?', $_SERVER['REQUEST_URI'] ?? '')[0];
+if (str_contains($uri, '/uploads/berita/')) {
+    $rel  = basename($uri);
+    $file = __DIR__ . '/uploads/berita/' . $rel;
+    $tipe = ['jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png', 'webp' => 'image/webp', 'gif' => 'image/gif'];
+    $ext  = strtolower(pathinfo($file, PATHINFO_EXTENSION));
 
-$db = get_db();
-
-function json_res($data, int $status = 200) {
-    http_response_code($status);
-    echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if (!is_file($file) || !isset($tipe[$ext])) {
+        http_response_code(404);
+        exit;
+    }
+    header('Content-Type: ' . $tipe[$ext]);
+    header('Cache-Control: public, max-age=86400');
+    readfile($file);
     exit;
 }
 
-function get_json_input(): array {
-    $raw = file_get_contents('php://input');
-    if (!$raw) return $_POST;
-    $parsed = json_decode($raw, true);
+header('Content-Type: application/json; charset=UTF-8');
+
+session_set_cookie_params([
+    'lifetime' => 60 * 60 * 24 * 7,
+    'path'     => '/',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
+ini_set('session.gc_maxlifetime', 60 * 60 * 24 * 7);
+session_start();
+
+function json_res(array $data, int $status = 200): void
+{
+    http_response_code($status);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+function json_input(): array
+{
+    $raw  = file_get_contents('php://input');
+    $parsed = $raw ? json_decode($raw, true) : null;
     return is_array($parsed) ? $parsed : $_POST;
 }
 
-if (!$db) {
-    if (isset($_GET['check_db'])) {
-        json_res(['success' => false, 'db_connected' => false, 'message' => 'Database MySQL tidak terhubung']);
+function require_login(): array
+{
+    if (empty($_SESSION['user'])) {
+        json_res(['success' => false, 'message' => 'Sesi berakhir, silakan login kembali.'], 401);
     }
+    return $_SESSION['user'];
 }
 
-$uri = $_SERVER['REQUEST_URI'] ?? '';
-$path = parse_url($uri, PHP_URL_PATH) ?: '';
-$path = preg_replace('#^.*?api/?#', '', $path);
-$endpoint = $_GET['endpoint'] ?? trim($path, '/');
-$method = $_SERVER['REQUEST_METHOD'];
-$input = get_json_input();
+function require_role(string $role): array
+{
+    $user = require_login();
+    if ($user['role'] !== $role) {
+        json_res(['success' => false, 'message' => 'Anda tidak punya akses ke fitur ini.'], 403);
+    }
+    return $user;
+}
 
-switch ($endpoint) {
-    case '':
-    case 'health':
-        json_res([
-            'success' => true,
-            'status' => 'online',
-            'app' => 'Posyandu Pintar REST API',
-            'version' => '4.0.0',
-            'db_connected' => ($db !== null)
-        ]);
-        break;
+function require_editor(): array
+{
+    $user = require_login();
+    if (!in_array($user['role'], ['admin', 'bidan'], true)) {
+        json_res(['success' => false, 'message' => 'Hanya admin atau bidan yang boleh mengelola berita.'], 403);
+    }
+    return $user;
+}
 
-    case 'auth/login':
-        if ($method !== 'POST') json_res(['success' => false, 'message' => 'Method not allowed'], 405);
-        $username = trim($input['username'] ?? '');
-        $password = trim($input['password'] ?? '');
+$endpoint = $_GET['endpoint'] ?? parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+$endpoint = trim((string)$endpoint, '/');
+if (str_starts_with($endpoint, 'api/')) {
+    $endpoint = substr($endpoint, 4);
+}
+$input    = json_input();
+$parts    = explode('/', trim((string)$endpoint, '/'));
 
-        if (!$db) {
-            $roles = ['kader', 'bidan', 'admin'];
-            $role = in_array($username, $roles) ? $username : 'kader';
-            json_res([
-                'success' => true,
-                'user' => [
-                    'id' => 1,
-                    'nama' => $role === 'bidan' ? 'Siti Nurhaliza, S.Tr.Keb' : ($role === 'admin' ? 'Bambang Hermawan' : 'Sari Rahmawati'),
-                    'username' => $username,
-                    'role' => $role,
-                    'dusun_binaan' => $role === 'kader' ? 'Gamping Wetan' : null,
-                    'telepon' => '0812-3456-7890'
-                ]
-            ]);
-        }
+$balitaModel     = null;
+$pengukuranModel = null;
+$userModel       = null;
+$beritaModel    = null;
+$jadwalModel    = null;
 
-        $userModel = new User($db);
-        $authResult = $userModel->authenticate($username, $password);
-        if ($authResult['success']) {
-            $user = $authResult['user'];
-            unset($user['password']);
-            $_SESSION['user'] = $user;
-            json_res(['success' => true, 'user' => $user]);
-        } else {
-            json_res(['success' => false, 'message' => $authResult['message']], 401);
-        }
-        break;
+function db_balita(): Balita
+{
+    global $balitaModel;
+    return $balitaModel ??= new Balita(get_db());
+}
 
-    case 'auth/me':
-        $user = $_SESSION['user'] ?? null;
-        if ($user) {
-            json_res(['success' => true, 'user' => $user]);
-        } else {
-            json_res(['success' => false, 'user' => null]);
-        }
-        break;
+function db_pengukuran(): Pengukuran
+{
+    global $pengukuranModel;
+    return $pengukuranModel ??= new Pengukuran(get_db());
+}
 
-    case 'auth/logout':
-        session_destroy();
-        json_res(['success' => true, 'message' => 'Berhasil keluar']);
-        break;
+function db_user(): User
+{
+    global $userModel;
+    return $userModel ??= new User(get_db());
+}
 
-    case 'balita':
-        if (!$db) json_res(['success' => false, 'message' => 'Database tidak terhubung'], 503);
-        $anakModel = new Anak($db);
+function db_berita(): Berita
+{
+    global $beritaModel;
+    return $beritaModel ??= new Berita(get_db());
+}
 
-        if ($method === 'GET') {
-            $dusun = $_GET['dusun'] ?? null;
-            $q = $_GET['q'] ?? null;
-            $data = $anakModel->getAllWithLastMeasurement($dusun, $q);
-            json_res(['success' => true, 'data' => $data]);
-        } elseif ($method === 'POST') {
-            $nama = trim($input['nama'] ?? '');
-            $nik = trim($input['nik'] ?? '');
-            $tanggalLahir = trim($input['tanggal_lahir'] ?? '');
-            $jenisKelamin = trim($input['jenis_kelamin'] ?? 'L');
-            $namaOrtu = trim($input['nama_ortu'] ?? '');
-            $dusun = trim($input['dusun'] ?? 'Gamping Wetan');
+function db_jadwal(): Jadwal
+{
+    global $jadwalModel;
+    return $jadwalModel ??= new Jadwal(get_db());
+}
 
-            if (!$nama || !$tanggalLahir || !$namaOrtu) {
-                json_res(['success' => false, 'message' => 'Nama, tanggal lahir, dan nama orang tua wajib diisi'], 400);
+function dusun_id(string $nama): int
+{
+    $stmt = get_db()->prepare("SELECT id FROM dusun WHERE nama = ? LIMIT 1");
+    $stmt->execute([$nama]);
+    $id = $stmt->fetchColumn();
+    if (!$id) {
+        json_res(['success' => false, 'message' => "Dusun '$nama' tidak terdaftar."], 400);
+    }
+    return (int)$id;
+}
+
+function upload_gambar(): string
+{
+    if (empty($_FILES['gambar']) || $_FILES['gambar']['error'] !== UPLOAD_ERR_OK) {
+        json_res(['success' => false, 'message' => 'File gambar gagal diunggah.'], 400);
+    }
+
+    $file = $_FILES['gambar'];
+    $tipe = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp', 'image/gif' => 'gif'];
+    $mime = mime_content_type($file['tmp_name']);
+
+    if (!isset($tipe[$mime])) {
+        json_res(['success' => false, 'message' => 'Format gambar harus JPG, PNG, WebP, atau GIF.'], 400);
+    }
+    if ($file['size'] > 2 * 1024 * 1024) {
+        json_res(['success' => false, 'message' => 'Ukuran gambar maksimal 2 MB.'], 400);
+    }
+
+    $nama = 'berita-' . date('YmdHis') . '-' . bin2hex(random_bytes(4)) . '.' . $tipe[$mime];
+    $dir  = __DIR__ . '/uploads/berita';
+    if (!is_dir($dir)) {
+        mkdir($dir, 0775, true);
+    }
+    if (!move_uploaded_file($file['tmp_name'], $dir . '/' . $nama)) {
+        json_res(['success' => false, 'message' => 'Gagal menyimpan file gambar.'], 500);
+    }
+
+    return '/api/uploads/berita/' . $nama;
+}
+
+function data_berita(array $input): array
+{
+    if (!($input['judul'] ?? '') || !($input['ringkasan'] ?? '') || !($input['isi'] ?? '')) {
+        json_res(['success' => false, 'message' => 'Judul, ringkasan, dan isi wajib diisi.'], 400);
+    }
+
+    $status = ($input['status'] ?? 'draft') === 'published' ? 'published' : 'draft';
+    $tipe   = ($input['tipe'] ?? 'berita') === 'blog' ? 'blog' : 'berita';
+
+    return [
+        'judul'        => $input['judul'],
+        'kategori'     => $input['kategori'] ?? 'KABAR DESA',
+        'tipe'         => $tipe,
+        'ringkasan'    => $input['ringkasan'],
+        'isi'          => $input['isi'],
+        'gambar'       => $input['gambar'] ?? '',
+        'status'       => $status,
+        'published_at' => $status === 'published' ? ($input['published_at'] ?? date('Y-m-d H:i:s')) : null,
+    ];
+}
+
+function simpan_berita(array $input, int $penulisId): int
+{
+    $data = data_berita($input);
+    $data['penulis_id'] = $penulisId;
+    return db_berita()->insert($data);
+}
+
+try {
+    switch (true) {
+        case $endpoint === 'health':
+            json_res(['success' => true, 'service' => 'Posyandu Pintar API']);
+
+        case $endpoint === 'auth/login':
+            $user = db_user()->authenticate(trim($input['username'] ?? ''), (string)($input['password'] ?? ''));
+            if (!$user['success']) {
+                json_res(['success' => false, 'message' => $user['message']], 401);
             }
+            session_regenerate_id(true);
+            $_SESSION['user'] = $user['user'];
+            json_res(['success' => true, 'user' => $user['user']]);
 
-            $id = $anakModel->insert([
-                'nama' => $nama,
-                'nik' => $nik,
-                'tanggal_lahir' => $tanggalLahir,
-                'jenis_kelamin' => $jenisKelamin,
-                'nama_ortu' => $namaOrtu,
-                'dusun' => $dusun,
-                'kader_id' => $_SESSION['user']['id'] ?? 1
-            ]);
-            json_res(['success' => true, 'id' => $id, 'message' => 'Balita berhasil ditambahkan']);
-        } elseif ($method === 'PUT') {
-            $id = (int)($_GET['id'] ?? $input['id'] ?? 0);
-            if ($id <= 0) json_res(['success' => false, 'message' => 'ID balita tidak valid'], 400);
+        case $endpoint === 'berita' && $_SERVER['REQUEST_METHOD'] === 'GET':
+            $tipe = ($_GET['tipe'] ?? '') === 'blog' ? 'blog' : (($_GET['tipe'] ?? '') === 'berita' ? 'berita' : null);
+            json_res(['success' => true, 'data' => db_berita()->getPublished($tipe)]);
 
-            $anakModel->update($id, [
-                'nama' => trim($input['nama'] ?? ''),
-                'nik' => trim($input['nik'] ?? ''),
-                'tanggal_lahir' => trim($input['tanggal_lahir'] ?? ''),
-                'jenis_kelamin' => trim($input['jenis_kelamin'] ?? 'L'),
-                'nama_ortu' => trim($input['nama_ortu'] ?? ''),
-                'dusun' => trim($input['dusun'] ?? '')
-            ]);
-            json_res(['success' => true, 'message' => 'Data balita berhasil diperbarui']);
-        } elseif ($method === 'DELETE') {
-            $id = (int)($_GET['id'] ?? $input['id'] ?? 0);
-            if ($id <= 0) json_res(['success' => false, 'message' => 'ID balita tidak valid'], 400);
-            $anakModel->softDelete($id);
-            json_res(['success' => true, 'message' => 'Data balita berhasil dihapus']);
-        }
-        break;
-
-    case 'balita/detail':
-        if (!$db) json_res(['success' => false, 'message' => 'Database tidak terhubung'], 503);
-        $id = (int)($_GET['id'] ?? 0);
-        if ($id <= 0) json_res(['success' => false, 'message' => 'ID balita tidak valid'], 400);
-
-        $anakModel = new Anak($db);
-        $pengukuranModel = new Pengukuran($db);
-
-        $anak = $anakModel->getById($id);
-        if (!$anak) json_res(['success' => false, 'message' => 'Balita tidak ditemukan'], 404);
-
-        $riwayat = $pengukuranModel->getByAnakIdAsc($id);
-        json_res([
-            'success' => true,
-            'anak' => $anak,
-            'riwayat' => $riwayat
-        ]);
-        break;
-
-    case 'pengukuran':
-        if (!$db) json_res(['success' => false, 'message' => 'Database tidak terhubung'], 503);
-        $pengukuranModel = new Pengukuran($db);
-
-        if ($method === 'GET') {
-            $bulan = $_GET['bulan'] ?? null;
-            $dusun = $_GET['dusun'] ?? null;
-            $status = $_GET['status'] ?? null;
-            $data = $pengukuranModel->getAllFiltered($bulan, $dusun, $status);
-            json_res(['success' => true, 'data' => $data]);
-        } elseif ($method === 'POST') {
-            $anakId = (int)($input['anak_id'] ?? 0);
-            $tanggalUkur = trim($input['tanggal_ukur'] ?? date('Y-m-d'));
-            $beratKg = (float)($input['berat_kg'] ?? 0);
-            $tinggiCm = (float)($input['tinggi_cm'] ?? 0);
-            $catatan = trim($input['catatan'] ?? '');
-
-            if ($anakId <= 0 || $beratKg <= 0 || $tinggiCm <= 0) {
-                json_res(['success' => false, 'message' => 'Balita, berat badan, dan tinggi badan wajib diisi valid'], 400);
+        case $endpoint === 'berita/detail' && $_SERVER['REQUEST_METHOD'] === 'GET':
+            $berita = db_berita()->getById((int)($_GET['id'] ?? 0));
+            if (!$berita) {
+                json_res(['success' => false, 'message' => 'Berita tidak ditemukan.'], 404);
             }
+            json_res(['success' => true, 'data' => $berita]);
 
-            $anakModel = new Anak($db);
-            $anak = $anakModel->getById($anakId);
-            if (!$anak) json_res(['success' => false, 'message' => 'Balita tidak ditemukan'], 404);
+        case $endpoint === 'berita/admin' && $_SERVER['REQUEST_METHOD'] === 'GET':
+            require_editor();
+            json_res(['success' => true, 'data' => db_berita()->getAll()]);
 
-            $umur = hitung_umur($anak['tanggal_lahir'], $tanggalUkur);
-            $usiaBulan = $umur['total_bulan'];
+        case $endpoint === 'berita/upload' && $_SERVER['REQUEST_METHOD'] === 'POST':
+            require_editor();
+            json_res(['success' => true, 'url' => upload_gambar()]);
 
-            $lastUkur = $pengukuranModel->getLastByAnakId($anakId);
-            $kategoriStatus = 'normal';
+        case $endpoint === 'berita' && $_SERVER['REQUEST_METHOD'] === 'POST':
+            $user = require_editor();
+            json_res(['success' => true, 'id' => simpan_berita($input, $user['id']), 'message' => 'Berita berhasil ditambahkan.']);
 
-            if ($lastUkur) {
-                $delta = $beratKg - (float)$lastUkur['berat_kg'];
-                if ($delta < -0.3) {
-                    $kategoriStatus = 'prioritas';
-                } elseif ($delta <= 0) {
-                    $kategoriStatus = 'pemantauan';
-                }
+        case $endpoint === 'berita' && $_SERVER['REQUEST_METHOD'] === 'PUT':
+            require_editor();
+            db_berita()->update((int)($_GET['id'] ?? 0), data_berita($input));
+            json_res(['success' => true, 'message' => 'Berita berhasil diperbarui.']);
+
+        case $endpoint === 'berita' && $_SERVER['REQUEST_METHOD'] === 'DELETE':
+            require_editor();
+            db_berita()->delete((int)($_GET['id'] ?? 0));
+            json_res(['success' => true, 'message' => 'Berita berhasil dihapus.']);
+
+        case $endpoint === 'jadwal' && $_SERVER['REQUEST_METHOD'] === 'GET':
+            json_res(['success' => true, 'data' => db_jadwal()->getAll()]);
+
+        case $endpoint === 'auth/me':
+            require_login();
+            json_res(['success' => true, 'user' => $_SESSION['user']]);
+
+        case $endpoint === 'auth/logout':
+            $_SESSION = [];
+            session_destroy();
+            json_res(['success' => true, 'message' => 'Berhasil keluar.']);
+
+        case $endpoint === 'auth/profile' && $_SERVER['REQUEST_METHOD'] === 'PUT':
+            $user = require_login();
+            db_user()->updateTelepon($user['id'], $input['telepon'] ?? null);
+            $_SESSION['user']['telepon'] = $input['telepon'] ?? null;
+            json_res(['success' => true, 'user' => $_SESSION['user'], 'message' => 'Profil berhasil disimpan.']);
+
+        case $endpoint === 'auth/password' && $_SERVER['REQUEST_METHOD'] === 'PUT':
+            $user  = require_login();
+            $lama  = (string)($input['password_lama'] ?? '');
+            $baru  = (string)($input['password_baru'] ?? '');
+            $data  = db_user()->findById($user['id']);
+
+            if (!$data || !password_verify($lama, $data['password'])) {
+                json_res(['success' => false, 'message' => 'Kata sandi lama tidak sesuai.'], 400);
             }
-
-            $newId = $pengukuranModel->insert([
-                'anak_id' => $anakId,
-                'tanggal_ukur' => $tanggalUkur,
-                'usia_bulan' => $usiaBulan,
-                'berat_kg' => $beratKg,
-                'tinggi_cm' => $tinggiCm,
-                'kategori_status' => $input['kategori_status'] ?? $kategoriStatus,
-                'catatan' => $catatan,
-                'dicatat_oleh_id' => $_SESSION['user']['id'] ?? 1
-            ]);
-
-            json_res([
-                'success' => true,
-                'id' => $newId,
-                'kategori_status' => $kategoriStatus,
-                'message' => 'Hasil penimbangan berhasil dicatat!'
-            ]);
-        } elseif ($method === 'DELETE') {
-            $id = (int)($_GET['id'] ?? 0);
-            if ($id <= 0) json_res(['success' => false, 'message' => 'ID pengukuran tidak valid'], 400);
-            $pengukuranModel->delete($id);
-            json_res(['success' => true, 'message' => 'Pengukuran berhasil dihapus']);
-        }
-        break;
-
-    case 'dashboard/kader':
-        if (!$db) json_res(['success' => false, 'message' => 'Database tidak terhubung'], 503);
-        $anakModel = new Anak($db);
-
-        $bulanSekarang = date('Y-m');
-        $allAnak = $anakModel->getAllWithLastMeasurement();
-        $totalAnak = count($allAnak);
-
-        $belumDitimbang = [];
-        $perluPerhatian = [];
-        $sudahDitimbangCount = 0;
-
-        foreach ($allAnak as $a) {
-            $terakhir = $a['tanggal_ukur_terakhir'] ?? null;
-            $sudahBulanIni = ($terakhir && str_starts_with($terakhir, $bulanSekarang));
-
-            if ($sudahBulanIni) {
-                $sudahDitimbangCount++;
-            } else {
-                $belumDitimbang[] = $a;
+            if (strlen($baru) < 6) {
+                json_res(['success' => false, 'message' => 'Kata sandi baru minimal 6 karakter.'], 400);
             }
+            db_user()->updatePassword($user['id'], $baru);
+            json_res(['success' => true, 'message' => 'Kata sandi berhasil diperbarui.']);
 
-            if (in_array($a['status_terakhir'] ?? '', ['pemantauan', 'prioritas', 'berisiko'])) {
-                $perluPerhatian[] = $a;
+        case $endpoint === 'balita' && $_SERVER['REQUEST_METHOD'] === 'GET':
+            require_login();
+            json_res(['success' => true, 'data' => db_balita()->getAll($_GET['dusun'] ?? null, $_GET['q'] ?? null)]);
+
+        case $endpoint === 'balita/detail' && $_SERVER['REQUEST_METHOD'] === 'GET':
+            require_login();
+            $balita = db_balita()->getById((int)($_GET['id'] ?? 0));
+            if (!$balita) {
+                json_res(['success' => false, 'message' => 'Data balita tidak ditemukan.'], 404);
             }
-        }
+            json_res(['success' => true, 'data' => $balita]);
 
-        json_res([
-            'success' => true,
-            'data' => [
-                'total_anak' => $totalAnak,
-                'sudah_ditimbang' => $sudahDitimbangCount,
-                'belum_ditimbang' => count($belumDitimbang),
-                'perlu_perhatian' => count($perluPerhatian),
-                'daftar_belum_ditimbang' => array_slice($belumDitimbang, 0, 10),
-                'daftar_perlu_perhatian' => array_slice($perluPerhatian, 0, 10)
-            ]
-        ]);
-        break;
-
-    case 'dashboard/bidan':
-    case 'bidan/prioritas':
-        if (!$db) json_res(['success' => false, 'message' => 'Database tidak terhubung'], 503);
-        $stmt = $db->query("SELECT a.id, a.nama, a.nik, a.tanggal_lahir, a.jenis_kelamin, a.dusun, a.nama_ortu,
-            p.berat_kg, p.tinggi_cm, p.kategori_status, p.tanggal_ukur, p.catatan
-            FROM anak a
-            JOIN pengukuran p ON p.anak_id = a.id
-            WHERE p.id = (SELECT p2.id FROM pengukuran p2 WHERE p2.anak_id = a.id ORDER BY p2.tanggal_ukur DESC LIMIT 1)
-              AND p.kategori_status IN ('pemantauan', 'prioritas', 'berisiko')
-            ORDER BY FIELD(p.kategori_status, 'prioritas', 'berisiko', 'pemantauan'), p.tanggal_ukur DESC");
-        $prioritasList = $stmt->fetchAll();
-
-        $statsDusun = $db->query("SELECT dusun, COUNT(*) as total FROM anak WHERE status = 'aktif' GROUP BY dusun")->fetchAll();
-
-        json_res([
-            'success' => true,
-            'prioritas' => $prioritasList,
-            'stats_dusun' => $statsDusun
-        ]);
-        break;
-
-    case 'bidan/rekap':
-        if (!$db) json_res(['success' => false, 'message' => 'Database tidak terhubung'], 503);
-        $bulan = $_GET['bulan'] ?? date('Y-m');
-        $stmt = $db->prepare("SELECT p.*, a.nama as nama_anak, a.dusun, a.jenis_kelamin, a.nama_ortu
-            FROM pengukuran p
-            JOIN anak a ON a.id = p.anak_id
-            WHERE p.tanggal_ukur LIKE ?
-            ORDER BY p.tanggal_ukur DESC");
-        $stmt->execute(["$bulan%"]);
-        json_res(['success' => true, 'data' => $stmt->fetchAll()]);
-        break;
-
-    case 'berita':
-        if (!$db) json_res(['success' => false, 'message' => 'Database tidak terhubung'], 503);
-        $beritaModel = new Berita($db);
-        $list = $beritaModel->getAllPublished();
-        json_res(['success' => true, 'data' => $list]);
-        break;
-
-    case 'berita/detail':
-        if (!$db) json_res(['success' => false, 'message' => 'Database tidak terhubung'], 503);
-        $id = (int)($_GET['id'] ?? 0);
-        $beritaModel = new Berita($db);
-        $item = $beritaModel->getById($id);
-        if (!$item) json_res(['success' => false, 'message' => 'Berita tidak ditemukan'], 404);
-        json_res(['success' => true, 'data' => $item]);
-        break;
-
-    case 'jadwal':
-        if (!$db) json_res(['success' => false, 'message' => 'Database tidak terhubung'], 503);
-        if ($method === 'GET') {
-            $stmt = $db->query("SELECT * FROM jadwal ORDER BY tanggal ASC");
-            json_res(['success' => true, 'data' => $stmt->fetchAll()]);
-        } elseif ($method === 'POST') {
-            $ins = $db->prepare("INSERT INTO jadwal (nama_kegiatan, dusun, lokasi, tanggal, waktu_mulai, waktu_selesai, status, petugas) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            $ins->execute([
-                $input['nama_kegiatan'] ?? '',
-                $input['dusun'] ?? '',
-                $input['lokasi'] ?? '',
-                $input['tanggal'] ?? date('Y-m-d'),
-                $input['waktu_mulai'] ?? '08:00',
-                $input['waktu_selesai'] ?? '11:00',
-                $input['status'] ?? 'rencana',
-                $input['petugas'] ?? ''
+        case $endpoint === 'balita' && $_SERVER['REQUEST_METHOD'] === 'POST':
+            $user = require_login();
+            if (!($input['nama'] ?? '') || !($input['tanggal_lahir'] ?? '') || !($input['jenis_kelamin'] ?? '') || !($input['nama_ortu'] ?? '')) {
+                json_res(['success' => false, 'message' => 'Nama, tanggal lahir, jenis kelamin, dan nama orang tua wajib diisi.'], 400);
+            }
+            $id = db_balita()->insert([
+                'nama'            => $input['nama'],
+                'nik'             => $input['nik'] ?? '',
+                'tanggal_lahir'   => $input['tanggal_lahir'],
+                'jenis_kelamin'   => $input['jenis_kelamin'],
+                'nama_ortu'       => $input['nama_ortu'],
+                'dusun_id'        => dusun_id($input['dusun'] ?? ''),
+                'status'          => $input['status'] ?? 'aktif',
+                'dicatat_oleh_id' => $user['id'],
             ]);
-            json_res(['success' => true, 'message' => 'Jadwal berhasil ditambahkan']);
-        }
-        break;
+            json_res(['success' => true, 'id' => $id, 'message' => 'Data balita berhasil disimpan.']);
 
-    case 'petugas':
-        if (!$db) json_res(['success' => false, 'message' => 'Database tidak terhubung'], 503);
-        $stmt = $db->query("SELECT id, nama, username, role, dusun_binaan, telepon, created_at FROM users ORDER BY role, nama");
-        json_res(['success' => true, 'data' => $stmt->fetchAll()]);
-        break;
+        case $endpoint === 'balita' && $_SERVER['REQUEST_METHOD'] === 'PUT':
+            require_login();
+            if (!($input['nama'] ?? '') || !($input['tanggal_lahir'] ?? '') || !($input['jenis_kelamin'] ?? '') || !($input['nama_ortu'] ?? '')) {
+                json_res(['success' => false, 'message' => 'Nama, tanggal lahir, jenis kelamin, dan nama orang tua wajib diisi.'], 400);
+            }
+            db_balita()->update((int)($_GET['id'] ?? 0), [
+                'nama'          => $input['nama'],
+                'nik'           => $input['nik'] ?? '',
+                'tanggal_lahir' => $input['tanggal_lahir'],
+                'jenis_kelamin' => $input['jenis_kelamin'],
+                'nama_ortu'     => $input['nama_ortu'],
+                'dusun_id'      => dusun_id($input['dusun'] ?? ''),
+                'status'        => $input['status'] ?? 'aktif',
+            ]);
+            json_res(['success' => true, 'message' => 'Data balita berhasil diperbarui.']);
 
-    default:
-        json_res(['success' => false, 'message' => "Endpoint '$endpoint' tidak ditemukan"], 404);
-        break;
+        case $endpoint === 'balita' && $_SERVER['REQUEST_METHOD'] === 'DELETE':
+            require_login();
+            db_balita()->delete((int)($_GET['id'] ?? 0));
+            json_res(['success' => true, 'message' => 'Data balita berhasil dihapus.']);
+
+        case $endpoint === 'pengukuran' && $_SERVER['REQUEST_METHOD'] === 'GET':
+            require_login();
+            json_res(['success' => true, 'data' => db_pengukuran()->getAll(
+                $_GET['bulan'] ?? null,
+                $_GET['dusun'] ?? null,
+                $_GET['status'] ?? null,
+                isset($_GET['anak']) ? (int)$_GET['anak'] : null
+            )]);
+
+        case $endpoint === 'pengukuran' && $_SERVER['REQUEST_METHOD'] === 'POST':
+            $user = require_login();
+            $balitaId = (int)($input['balita_id'] ?? 0);
+            if (!$balitaId || !($input['tanggal_ukur'] ?? '') || !isset($input['berat_kg']) || !isset($input['tinggi_cm'])) {
+                json_res(['success' => false, 'message' => 'Anak, tanggal ukur, berat, dan tinggi wajib diisi.'], 400);
+            }
+            $status = evaluasi_status_pengukuran(db_pengukuran()->getLastByBalitaId($balitaId), (float)$input['berat_kg']);
+            $id = db_pengukuran()->insert([
+                'balita_id'       => $balitaId,
+                'tanggal_ukur'    => $input['tanggal_ukur'],
+                'berat_kg'        => $input['berat_kg'],
+                'tinggi_cm'       => $input['tinggi_cm'],
+                'kategori_status' => $status,
+                'catatan'         => $input['catatan'] ?? '',
+                'dicatat_oleh_id' => $user['id'],
+            ]);
+            json_res(['success' => true, 'id' => $id, 'kategori_status' => $status, 'message' => 'Pengukuran berhasil disimpan.']);
+
+        case $endpoint === 'pengukuran' && $_SERVER['REQUEST_METHOD'] === 'DELETE':
+            require_login();
+            db_pengukuran()->delete((int)($_GET['id'] ?? 0));
+            json_res(['success' => true, 'message' => 'Data pengukuran berhasil dihapus.']);
+
+        case $endpoint === 'petugas' && $_SERVER['REQUEST_METHOD'] === 'GET':
+            require_login();
+            json_res(['success' => true, 'data' => db_user()->getAll()]);
+
+        case $endpoint === 'petugas' && $_SERVER['REQUEST_METHOD'] === 'POST':
+            require_role('admin');
+            if (!($input['nama'] ?? '') || !($input['username'] ?? '') || !($input['password'] ?? '')) {
+                json_res(['success' => false, 'message' => 'Nama, username, dan kata sandi wajib diisi.'], 400);
+            }
+            try {
+                $id = db_user()->create([
+                    'nama'     => $input['nama'],
+                    'username' => $input['username'],
+                    'password' => $input['password'],
+                    'role'     => $input['role'] ?? 'kader',
+                    'dusun_id' => ($input['role'] ?? 'kader') === 'kader' && !empty($input['dusun_binaan'])
+                        ? dusun_id($input['dusun_binaan'])
+                        : null,
+                    'telepon'  => $input['telepon'] ?? null,
+                ]);
+            } catch (PDOException $e) {
+                json_res(['success' => false, 'message' => 'Username sudah dipakai petugas lain.'], 409);
+            }
+            json_res(['success' => true, 'id' => $id, 'message' => 'Petugas berhasil ditambahkan.']);
+
+        case $endpoint === 'petugas' && $_SERVER['REQUEST_METHOD'] === 'DELETE':
+            require_role('admin');
+            db_user()->delete((int)($_GET['id'] ?? 0));
+            json_res(['success' => true, 'message' => 'Petugas berhasil dihapus.']);
+
+        case $endpoint === 'jadwal' && $_SERVER['REQUEST_METHOD'] === 'POST':
+            require_role('admin');
+            db_jadwal()->insert([
+                'nama_kegiatan' => $input['nama_kegiatan'] ?? '',
+                'dusun_id'      => dusun_id($input['dusun'] ?? ''),
+                'lokasi'        => $input['lokasi'] ?? '',
+                'tanggal'       => $input['tanggal'] ?? '',
+                'waktu_mulai'   => $input['waktu_mulai'] ?? '08:00',
+                'waktu_selesai' => $input['waktu_selesai'] ?? '11:00',
+                'status'        => $input['status'] ?? 'rencana',
+                'petugas'       => $input['petugas'] ?? '',
+            ]);
+            json_res(['success' => true, 'message' => 'Jadwal berhasil ditambahkan.']);
+
+        case $endpoint === 'jadwal' && $_SERVER['REQUEST_METHOD'] === 'PUT':
+            require_role('admin');
+            db_jadwal()->update((int)($_GET['id'] ?? 0), [
+                'nama_kegiatan' => $input['nama_kegiatan'] ?? '',
+                'dusun_id'      => dusun_id($input['dusun'] ?? ''),
+                'lokasi'        => $input['lokasi'] ?? '',
+                'tanggal'       => $input['tanggal'] ?? '',
+                'waktu_mulai'   => $input['waktu_mulai'] ?? '08:00',
+                'waktu_selesai' => $input['waktu_selesai'] ?? '11:00',
+                'status'        => $input['status'] ?? 'rencana',
+                'petugas'       => $input['petugas'] ?? '',
+            ]);
+            json_res(['success' => true, 'message' => 'Jadwal berhasil diperbarui.']);
+
+        case $endpoint === 'jadwal' && $_SERVER['REQUEST_METHOD'] === 'DELETE':
+            require_role('admin');
+            db_jadwal()->delete((int)($_GET['id'] ?? 0));
+            json_res(['success' => true, 'message' => 'Jadwal berhasil dihapus.']);
+
+        default:
+            json_res(['success' => false, 'message' => 'Endpoint tidak ditemukan.'], 404);
+    }
+} catch (PDOException $e) {
+    $kode = (int)($e->errorInfo[1] ?? 0);
+    if ($kode === 1062) {
+        json_res(['success' => false, 'message' => 'Data sudah terdaftar (duplikat). Periksa NIK, username, atau tanggal pengukuran.'], 409);
+    }
+    if ($kode === 3819 || $kode === 3820) {
+        json_res(['success' => false, 'message' => 'Nilai di luar batas yang diizinkan (cek berat, tinggi, atau jam jadwal).'], 400);
+    }
+    json_res(['success' => false, 'message' => 'Terjadi kesalahan pada basis data.'], 500);
+} catch (Throwable $e) {
+    json_res(['success' => false, 'message' => 'Terjadi kesalahan server.'], 500);
 }

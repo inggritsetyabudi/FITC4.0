@@ -1,28 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { pengukuranService } from '../services/api';
-import type { Pengukuran } from '../types';
+import { useAsyncData } from '../hooks/useAsyncData';
 import { formatTanggalId } from '../utils/helpers';
+import { DUSUN_LIST } from '../utils/constants';
 import { StatusBadge } from '../components/ui/StatusBadge';
 
-export const RekapPage: React.FC<{ onNavigate: (page: string, params?: any) => void }> = ({ onNavigate }) => {
-  const [data, setData] = useState<Pengukuran[]>([]);
+export const RekapPage: React.FC = () => {
+  const navigate = useNavigate();
   const [filterBulan, setFilterBulan] = useState('2026-08');
   const [filterDusun, setFilterDusun] = useState('semua');
-  const [loading, setLoading] = useState(true);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const list = await pengukuranService.getAll(filterBulan, filterDusun);
-      setData(list);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, [filterBulan, filterDusun]);
+  const { data: data = [], loading, error, reload } = useAsyncData(
+    () => pengukuranService.getAll(filterBulan, filterDusun),
+    [filterBulan, filterDusun]
+  );
 
   const handleExportCsv = () => {
     if (data.length === 0) return;
@@ -68,11 +60,9 @@ export const RekapPage: React.FC<{ onNavigate: (page: string, params?: any) => v
           className="w-full sm:w-56 px-4 py-2.5 text-xs font-semibold bg-slate-50 border border-line rounded-xl focus:outline-none focus:border-[#2196F3] focus:bg-white"
         >
           <option value="semua">Semua Dusun</option>
-          <option value="Gamping Wetan">Dusun Gamping Wetan</option>
-          <option value="Gamping Tengah">Dusun Gamping Tengah</option>
-          <option value="Boharan">Dusun Boharan</option>
-          <option value="Kasengan">Dusun Kasengan</option>
-          <option value="Bendomungal">Dusun Bendomungal</option>
+          {DUSUN_LIST.map((d) => (
+            <option key={d} value={d}>Dusun {d}</option>
+          ))}
         </select>
 
         <select
@@ -88,7 +78,7 @@ export const RekapPage: React.FC<{ onNavigate: (page: string, params?: any) => v
 
         <div className="flex items-center gap-2 w-full sm:w-auto sm:ml-auto">
           <button
-            onClick={loadData}
+            onClick={reload}
             className="flex-1 sm:flex-none px-5 py-2.5 bg-[#2196F3] hover:bg-[#1976D2] text-white text-xs font-bold rounded-xl transition-base"
           >
             Filter
@@ -120,8 +110,8 @@ export const RekapPage: React.FC<{ onNavigate: (page: string, params?: any) => v
           </div>
         ) : data.length === 0 ? (
           <div className="p-12 text-center text-ink-400">
-            <i className="bi bi-inbox text-3xl mb-2 block"></i>
-            <p className="text-xs font-semibold">Belum ada riwayat pengukuran pada periode ini.</p>
+            <i className={`bi ${error ? 'bi-exclamation-circle text-amber-500' : 'bi-inbox'} text-3xl mb-2 block`}></i>
+            <p className="text-xs font-semibold">{error || 'Belum ada riwayat pengukuran pada periode ini.'}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -140,53 +130,44 @@ export const RekapPage: React.FC<{ onNavigate: (page: string, params?: any) => v
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
-                {data.map((item) => {
-                  const ortuMap: Record<number, string> = {
-                    1: 'Siti Aminah',
-                    2: 'Rina Wulandari',
-                    3: 'Dewi Lestari',
-                    4: 'Andi Saputra',
-                    5: 'Siti Nurhayati'
-                  };
-                  return (
-                    <tr key={item.id} className="hover:bg-slate-50/70 transition-base">
-                      <td className="py-3.5 px-4 text-[#3D5F7D] whitespace-nowrap font-medium">
-                        {formatTanggalId(item.tanggal_ukur, true)}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <strong className="text-[#0D47A1] font-bold block">{item.nama_anak}</strong>
-                        <span className="text-xs text-[#607D99]">{ortuMap[item.anak_id] || 'Siti Aminah'}</span>
-                      </td>
-                      <td className="py-3.5 px-3 text-ink-700 whitespace-nowrap">
-                        {item.dusun}
-                      </td>
-                      <td className="py-3.5 px-3 text-center text-ink-700 whitespace-nowrap">
-                        {item.usia_bulan} bln
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-bold text-[#0D47A1] whitespace-nowrap">
-                        {item.berat_kg}
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-bold text-[#0D47A1] whitespace-nowrap">
-                        {item.tinggi_cm}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <StatusBadge status={item.kategori_status} />
-                      </td>
-                      <td className="py-3.5 px-4 text-[#3D5F7D] max-w-xs text-xs">
-                        {item.catatan || '-'}
-                      </td>
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <button
-                          onClick={() => onNavigate('detail_balita', { id: item.anak_id })}
-                          className="px-3 py-1.5 bg-white hover:bg-blue-50 text-[#2196F3] text-xs font-semibold rounded-lg border border-[#2196F3] flex items-center gap-1.5 ml-auto transition-base"
-                        >
-                          <i className="bi bi-graph-up"></i>
-                          <span>Detail</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {data.map((item) => (
+                  <tr key={item.id} className="hover:bg-slate-50/70 transition-base">
+                    <td className="py-3.5 px-4 text-[#3D5F7D] whitespace-nowrap font-medium">
+                      {formatTanggalId(item.tanggal_ukur, true)}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <strong className="text-[#0D47A1] font-bold block">{item.nama_anak}</strong>
+                      <span className="text-xs text-[#607D99]">{item.nama_ortu || '-'}</span>
+                    </td>
+                    <td className="py-3.5 px-3 text-ink-700 whitespace-nowrap">
+                      {item.dusun}
+                    </td>
+                    <td className="py-3.5 px-3 text-center text-ink-700 whitespace-nowrap">
+                      {item.usia_bulan} bln
+                    </td>
+                    <td className="py-3.5 px-3 text-center font-bold text-[#0D47A1] whitespace-nowrap">
+                      {item.berat_kg}
+                    </td>
+                    <td className="py-3.5 px-3 text-center font-bold text-[#0D47A1] whitespace-nowrap">
+                      {item.tinggi_cm}
+                    </td>
+                    <td className="py-3.5 px-4 text-center">
+                      <StatusBadge status={item.kategori_status} />
+                    </td>
+                    <td className="py-3.5 px-4 text-[#3D5F7D] max-w-xs text-xs">
+                      {item.catatan || '-'}
+                    </td>
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <button
+                        onClick={() => navigate(`/balita/${item.anak_id}`)}
+                        className="px-3 py-1.5 bg-white hover:bg-blue-50 text-[#2196F3] text-xs font-semibold rounded-lg border border-[#2196F3] flex items-center gap-1.5 ml-auto transition-base"
+                      >
+                        <i className="bi bi-graph-up"></i>
+                        <span>Detail</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

@@ -1,32 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { balitaService } from '../services/api';
+import { useAsyncData } from '../hooks/useAsyncData';
 import type { Balita } from '../types';
 import { hitungUmur, formatTanggalId } from '../utils/helpers';
+import { DUSUN_LIST } from '../utils/constants';
 import { StatusBadge } from '../components/ui/StatusBadge';
 import { ChildModal } from '../components/ui/ChildModal';
 
-export const BalitaPage: React.FC<{ onNavigate: (page: string, params?: any) => void }> = ({ onNavigate }) => {
-  const [daftarBalita, setDaftarBalita] = useState<Balita[]>([]);
-  const [search, setSearch] = useState<string>('');
-  const [filterDusun, setFilterDusun] = useState<string>('semua');
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+export const BalitaPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [search, setSearch] = useState('');
+  const [filterDusun, setFilterDusun] = useState('semua');
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBalita, setEditingBalita] = useState<Balita | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
 
-  const loadData = async () => {
-    try {
-      const data = await balitaService.getAll(filterDusun, search);
-      setDaftarBalita(data);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: daftarBalita = [], loading, error, reload } = useAsyncData(
+    () => balitaService.getAll(filterDusun, search),
+    [filterDusun, search]
+  );
 
-  useEffect(() => {
-    loadData();
-  }, [filterDusun, search]);
-
-  const handleSaveBalita = async (formData: any) => {
+  const handleSaveBalita = async (formData: Omit<Balita, 'id'>) => {
     if (editingBalita) {
       await balitaService.update(editingBalita.id, formData);
     } else {
@@ -34,7 +28,7 @@ export const BalitaPage: React.FC<{ onNavigate: (page: string, params?: any) => 
     }
     setIsModalOpen(false);
     setEditingBalita(null);
-    loadData();
+    reload();
   };
 
   return (
@@ -78,15 +72,13 @@ export const BalitaPage: React.FC<{ onNavigate: (page: string, params?: any) => 
             className="w-full sm:w-48 px-3 py-2.5 text-xs font-semibold bg-slate-50 border border-line rounded-xl focus:outline-none focus:border-[#2196F3] focus:bg-white"
           >
             <option value="semua">Semua Dusun</option>
-            <option value="Gamping Wetan">Dusun Gamping Wetan</option>
-            <option value="Gamping Tengah">Dusun Gamping Tengah</option>
-            <option value="Boharan">Dusun Boharan</option>
-            <option value="Kasengan">Dusun Kasengan</option>
-            <option value="Bendomungal">Dusun Bendomungal</option>
+            {DUSUN_LIST.map((d) => (
+              <option key={d} value={d}>Dusun {d}</option>
+            ))}
           </select>
 
           <button
-            onClick={loadData}
+            onClick={reload}
             className="px-4 py-2.5 bg-[#2196F3] hover:bg-[#1976D2] text-white text-xs font-bold rounded-xl transition-base shrink-0"
           >
             Filter
@@ -102,8 +94,8 @@ export const BalitaPage: React.FC<{ onNavigate: (page: string, params?: any) => 
           </div>
         ) : daftarBalita.length === 0 ? (
           <div className="p-12 text-center text-ink-400">
-            <i className="bi bi-inbox text-3xl mb-2 block"></i>
-            <p className="text-xs font-semibold">Tidak ditemukan data balita sesuai kriteria pencarian.</p>
+            <i className={`bi ${error ? 'bi-exclamation-circle text-amber-500' : 'bi-inbox'} text-3xl mb-2 block`}></i>
+            <p className="text-xs font-semibold">{error || 'Tidak ditemukan data balita sesuai kriteria pencarian.'}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -135,7 +127,7 @@ export const BalitaPage: React.FC<{ onNavigate: (page: string, params?: any) => 
                           </div>
                           <div>
                             <button
-                              onClick={() => onNavigate('detail_balita', { id: anak.id })}
+                              onClick={() => navigate(`/balita/${anak.id}`)}
                               className="font-bold text-[#0D47A1] hover:text-[#2196F3] transition-base block text-left"
                             >
                               {anak.nama}
@@ -180,14 +172,14 @@ export const BalitaPage: React.FC<{ onNavigate: (page: string, params?: any) => 
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <div className="inline-flex items-center gap-1.5">
                           <button
-                            onClick={() => onNavigate('pengukuran', { preselectedId: anak.id })}
+                            onClick={() => navigate(`/pengukuran?anak=${anak.id}`)}
                             className="px-3 py-1.5 bg-[#2196F3] hover:bg-[#1976D2] text-white text-xs font-semibold rounded-lg shadow-xs flex items-center gap-1.5 transition-base"
                           >
                             <i className="bi bi-clipboard-plus"></i>
                             <span>Ukur</span>
                           </button>
                           <button
-                            onClick={() => onNavigate('detail_balita', { id: anak.id })}
+                            onClick={() => navigate(`/balita/${anak.id}`)}
                             className="px-3 py-1.5 bg-white hover:bg-blue-50 text-[#2196F3] text-xs font-semibold rounded-lg border border-[#2196F3] flex items-center gap-1.5 transition-base"
                           >
                             <i className="bi bi-eye"></i>

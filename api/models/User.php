@@ -1,109 +1,71 @@
 <?php
+
 class User
 {
-    private PDO $db;
-    private string $table = 'users';
+    public function __construct(private PDO $db) {}
 
-    public function __construct(PDO $db)
+    public function authenticate(string $username, string $password): array
     {
-        $this->db = $db;
+        $stmt = $this->db->prepare("SELECT u.id, u.nama, u.username, u.password, u.role, u.telepon, u.created_at, d.nama AS dusun_binaan
+                FROM users u LEFT JOIN dusun d ON d.id = u.dusun_id
+                WHERE u.username = ? LIMIT 1");
+        $stmt->execute([$username]);
+        $user = $stmt->fetch();
+
+        if (!$user || !password_verify($password, $user['password'])) {
+            return ['success' => false, 'message' => 'Username atau kata sandi tidak sesuai.'];
+        }
+
+        unset($user['password']);
+        return ['success' => true, 'user' => $user];
     }
 
     public function findById(int $id): ?array
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE id = ? LIMIT 1");
+        $stmt = $this->db->prepare("SELECT id, nama, username, password, role, telepon, created_at FROM users WHERE id = ? LIMIT 1");
         $stmt->execute([$id]);
-        $row = $stmt->fetch();
-        return $row ?: null;
-    }
-
-    public function findByUsername(string $username): ?array
-    {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE username = ? LIMIT 1");
-        $stmt->execute([$username]);
-        $row = $stmt->fetch();
-        return $row ?: null;
-    }
-
-    public function authenticate(string $username, string $password): array
-    {
-        $user = $this->findByUsername($username);
-        if (!$user) {
-            return ['success' => false, 'message' => 'Nama pengguna tidak terdaftar.'];
-        }
-
-        $valid = password_verify($password, $user['password']) || ($password === '123');
-        if (!$valid) {
-            return ['success' => false, 'message' => 'Kata sandi tidak sesuai.'];
-        }
-
-        return ['success' => true, 'user' => $user];
-    }
-
-    public function updateProfile(int $id, array $data): bool
-    {
-        $stmt = $this->db->prepare("UPDATE {$this->table} SET telepon = ? WHERE id = ?");
-        return $stmt->execute([
-            $data['telepon'] ?? null,
-            $id
-        ]);
-    }
-
-    public function updatePassword(int $id, string $hashedPassword): bool
-    {
-        $stmt = $this->db->prepare("UPDATE {$this->table} SET password = ? WHERE id = ?");
-        return $stmt->execute([$hashedPassword, $id]);
+        return $stmt->fetch() ?: null;
     }
 
     public function getAll(): array
     {
-        $stmt = $this->db->query("SELECT * FROM {$this->table} ORDER BY role ASC, nama ASC");
+        $stmt = $this->db->query("SELECT u.id, u.nama, u.username, u.role, u.telepon, u.created_at, d.nama AS dusun_binaan
+                FROM users u LEFT JOIN dusun d ON d.id = u.dusun_id
+                ORDER BY u.role, u.nama");
         return $stmt->fetchAll();
     }
 
-    public function create(array $data): bool
+    public function updateTelepon(int $id, ?string $telepon): bool
     {
-        $stmt = $this->db->prepare("INSERT INTO {$this->table} (nama, username, password, role, dusun_binaan, telepon) VALUES (?, ?, ?, ?, ?, ?)");
-        return $stmt->execute([
-            $data['nama'],
-            $data['username'],
-            $data['password'],
-            $data['role'] ?? 'kader',
-            $data['dusun_binaan'] ?? null,
-            $data['telepon'] ?? null
-        ]);
+        $stmt = $this->db->prepare("UPDATE users SET telepon = ? WHERE id = ?");
+        return $stmt->execute([$telepon, $id]);
     }
 
-    public function getByRole(string $role): array
+    public function updatePassword(int $id, string $passwordBaru): bool
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE role = ? ORDER BY nama ASC");
-        $stmt->execute([$role]);
-        return $stmt->fetchAll();
+        $hash = password_hash($passwordBaru, PASSWORD_DEFAULT);
+        $stmt = $this->db->prepare("UPDATE users SET password = ? WHERE id = ?");
+        return $stmt->execute([$hash, $id]);
     }
 
-    public function updateUser(int $id, array $data): bool
+    public function create(array $data): int
     {
-        $stmt = $this->db->prepare("UPDATE {$this->table} SET nama = ?, username = ?, role = ?, dusun_binaan = ?, telepon = ? WHERE id = ?");
-        return $stmt->execute([
+        $stmt = $this->db->prepare("INSERT INTO users (nama, username, password, role, dusun_id, telepon) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([
             $data['nama'],
             $data['username'],
+            password_hash($data['password'], PASSWORD_DEFAULT),
             $data['role'],
-            $data['dusun_binaan'] ?? null,
+            $data['dusun_id'] ?? null,
             $data['telepon'] ?? null,
-            $id
         ]);
-    }
-
-    public function resetPassword(int $id, string $newPass = '123'): bool
-    {
-        $hashed = password_hash($newPass, PASSWORD_DEFAULT);
-        $stmt = $this->db->prepare("UPDATE {$this->table} SET password = ? WHERE id = ?");
-        return $stmt->execute([$hashed, $id]);
+        return (int)$this->db->lastInsertId();
     }
 
     public function delete(int $id): bool
     {
-        $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = ?");
-        return $stmt->execute([$id]);
+        $stmt = $this->db->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->rowCount() > 0;
     }
 }

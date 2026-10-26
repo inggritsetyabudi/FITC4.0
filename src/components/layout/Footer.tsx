@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
-export const Footer: React.FC<{ onNavigate: (page: string) => void }> = ({ onNavigate }) => {
+export const Footer: React.FC = () => {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -20,8 +21,8 @@ export const Footer: React.FC<{ onNavigate: (page: string) => void }> = ({ onNav
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 pb-10 border-b border-white/15">
           <div className="lg:col-span-4 space-y-4">
-            <button
-              onClick={() => onNavigate('landing')}
+            <Link
+              to="/"
               className="flex items-center gap-2.5 text-left focus:outline-none"
             >
               <img
@@ -30,7 +31,7 @@ export const Footer: React.FC<{ onNavigate: (page: string) => void }> = ({ onNav
                 className="h-10 w-10 object-contain"
               />
               <span className="text-xl font-bold text-white tracking-tight">Posyandu Pintar</span>
-            </button>
+            </Link>
             <p className="text-sm text-white/70 leading-relaxed max-w-sm">
               Sistem informasi posyandu untuk pemantauan tumbuh kembang balita dan percepatan penurunan risiko stunting di tingkat desa. Menghubungkan kader, bidan desa, dan para orang tua balita.
             </p>
@@ -78,9 +79,9 @@ export const Footer: React.FC<{ onNavigate: (page: string) => void }> = ({ onNav
             <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Menu Utama</h4>
             <ul className="space-y-2.5 text-sm text-white/70 font-medium">
               <li>
-                <button onClick={() => onNavigate('landing')} className="hover:text-white transition-base">
+                <Link to="/" className="hover:text-white transition-base">
                   Beranda
-                </button>
+                </Link>
               </li>
               <li>
                 <a href="#tentang" className="hover:text-white transition-base">Tentang Kami</a>

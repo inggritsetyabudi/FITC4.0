@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { jadwalService } from '../services/api';
+import { useAsyncData } from '../hooks/useAsyncData';
+import { DUSUN_LIST } from '../utils/constants';
 import type { Jadwal } from '../types';
 import { formatTanggalId } from '../utils/helpers';
 
-export const JadwalPage: React.FC<{ onNavigate: (page: string) => void }> = () => {
-  const [jadwalList, setJadwalList] = useState<Jadwal[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+export const JadwalPage: React.FC = () => {
+  const { data: jadwalList = [], loading, error, reload } = useAsyncData(() => jadwalService.getAll());
   const [filterStatus, setFilterStatus] = useState<string>('semua');
   const [showModal, setShowModal] = useState<boolean>(false);
   const [formData, setFormData] = useState<Partial<Jadwal>>({
@@ -19,26 +20,13 @@ export const JadwalPage: React.FC<{ onNavigate: (page: string) => void }> = () =
     status: 'rencana'
   });
 
-  const loadData = async () => {
-    try {
-      const data = await jadwalService.getAll();
-      setJadwalList(data);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nama_kegiatan || !formData.dusun || !formData.tanggal) return;
 
     await jadwalService.create(formData as Omit<Jadwal, 'id'>);
     setShowModal(false);
-    loadData();
+    reload();
   };
 
   const filtered = jadwalList.filter((j) => {
@@ -78,7 +66,7 @@ export const JadwalPage: React.FC<{ onNavigate: (page: string) => void }> = () =
         </select>
 
         <button
-          onClick={loadData}
+          onClick={reload}
           className="w-full sm:w-auto px-6 py-2.5 bg-[#2196F3] hover:bg-[#1976D2] text-white text-xs font-bold rounded-xl transition-base shrink-0"
         >
           Filter Status
@@ -93,8 +81,8 @@ export const JadwalPage: React.FC<{ onNavigate: (page: string) => void }> = () =
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-12 text-center text-ink-400">
-            <i className="bi bi-calendar-x text-3xl mb-2 block"></i>
-            <p className="text-xs font-semibold">Tidak ada agenda jadwal posyandu untuk status ini.</p>
+            <i className={`bi ${error ? 'bi-exclamation-circle text-amber-500' : 'bi-calendar-x'} text-3xl mb-2 block`}></i>
+            <p className="text-xs font-semibold">{error || 'Tidak ada agenda jadwal posyandu untuk status ini.'}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -153,8 +141,9 @@ export const JadwalPage: React.FC<{ onNavigate: (page: string) => void }> = () =
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-line shadow-panel space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs overflow-y-auto p-4">
+          <div className="min-h-full flex items-center justify-center">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-line shadow-panel space-y-4">
             <h3 className="text-lg font-extrabold text-[#0D47A1]">Tambah Agenda Jadwal Baru</h3>
             <form onSubmit={handleSave} className="space-y-3">
               <div>
@@ -176,11 +165,9 @@ export const JadwalPage: React.FC<{ onNavigate: (page: string) => void }> = () =
                     onChange={(e) => setFormData({ ...formData, dusun: e.target.value })}
                     className="w-full px-3 py-2 text-xs border border-line rounded-xl bg-slate-50"
                   >
-                    <option value="Gamping Wetan">Gamping Wetan</option>
-                    <option value="Gamping Tengah">Gamping Tengah</option>
-                    <option value="Boharan">Boharan</option>
-                    <option value="Kasengan">Kasengan</option>
-                    <option value="Bendomungal">Bendomungal</option>
+                    {DUSUN_LIST.map((d) => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -250,6 +237,7 @@ export const JadwalPage: React.FC<{ onNavigate: (page: string) => void }> = () =
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

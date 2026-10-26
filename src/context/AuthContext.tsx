@@ -1,56 +1,54 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { User, UserRole } from '../types';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import type { User } from '../types';
 import { authService } from '../services/api';
-import { INITIAL_USERS } from '../utils/mockData';
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password?: string) => Promise<boolean>;
-  logout: () => void;
-  switchRole: (role: UserRole) => void;
+  loading: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  updateUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  login: async () => false,
-  logout: () => {},
-  switchRole: () => {}
+  loading: true,
+  login: async () => {},
+  logout: async () => {},
+  updateUser: () => {}
 });
 
+// eslint-disable-next-line react-refresh/only-export-components
+export const useAuth = () => useContext(AuthContext);
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => authService.getCurrentUser());
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      setUser(INITIAL_USERS[0]);
-    }
+    authService.me()
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
-  const login = async (username: string, password?: string): Promise<boolean> => {
-    const res = await authService.login(username, password);
-    if (res.success && res.user) {
-      setUser(res.user);
-      return true;
-    }
-    return false;
+  const login = async (username: string, password: string): Promise<void> => {
+    const loggedIn = await authService.login(username, password);
+    setUser(loggedIn);
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async (): Promise<void> => {
+    await authService.logout().catch(() => {});
     setUser(null);
   };
 
-  const switchRole = (role: UserRole) => {
-    const found = INITIAL_USERS.find(u => u.role === role) || INITIAL_USERS[0];
-    localStorage.setItem('posyandu_pintar_currentUser', JSON.stringify(found));
-    setUser(found);
+  const updateUser = (updated: User) => {
+    setUser(updated);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, switchRole }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);

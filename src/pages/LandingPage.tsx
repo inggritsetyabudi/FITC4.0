@@ -1,11 +1,18 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Jadwal } from '../types';
+import { useAsyncData } from '../hooks/useAsyncData';
+import { beritaService } from '../services/api';
+import { formatTanggalId } from '../utils/helpers';
 
-export const LandingPage: React.FC<{ onNavigate: (page: string, params?: any) => void }> = ({ onNavigate }) => {
+export const LandingPage: React.FC = () => {
+  const navigate = useNavigate();
   const [kmsJk, setKmsJk] = useState<'L' | 'P'>('L');
   const [kmsUsia, setKmsUsia] = useState<number>(24);
   const [kmsBerat, setKmsBerat] = useState<number>(11.5);
   const [kmsTinggi, setKmsTinggi] = useState<number>(86.0);
+  const { data: daftarBerita = [] } = useAsyncData(() => beritaService.getAll('berita'));
+  const { data: daftarBlog = [] } = useAsyncData(() => beritaService.getAll('blog'));
 
   const calculateKms = () => {
     let bbIdealMin = (kmsUsia * 0.2) + 7.5;
@@ -106,22 +113,14 @@ export const LandingPage: React.FC<{ onNavigate: (page: string, params?: any) =>
               <span className="hero-title-line">tertinggal.</span>
             </h1>
 
-            <p className="text-sm sm:text-base text-slate-200 leading-relaxed max-w-xl">
+            <p className="text-sm sm:text-base text-slate-200 leading-normal max-w-xl">
               Posyandu Pintar membantu kader mencatat hasil timbang bulanan dan membantu bidan memantau perkembangan balita dengan lebih rapi.
             </p>
 
             <div className="hero-actions flex items-center flex-wrap">
-              <button
-                onClick={() => onNavigate('login')}
-                className="px-6 py-3 bg-[#2196F3] hover:bg-[#1976D2] text-white font-bold text-xs sm:text-sm rounded-xl flex items-center gap-2 shadow-md transition-base"
-              >
-                <i className="bi bi-box-arrow-in-right text-base"></i>
-                <span>Masuk ke Posyandu Pintar</span>
-              </button>
-
               <a
                 href="#tentang"
-                className="px-6 py-3 bg-black/40 hover:bg-black/60 text-white font-bold text-xs sm:text-sm rounded-xl border border-white/20 transition-base"
+                className="px-6 py-3 bg-ink-800/40 hover:bg-ink-800/60 text-white font-bold text-xs sm:text-sm rounded-xl border border-white/20 transition-base"
               >
                 Pelajari Tentang Kami
               </a>
@@ -603,85 +602,66 @@ export const LandingPage: React.FC<{ onNavigate: (page: string, params?: any) =>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="blog-feature">
-              <div
-                onClick={() => onNavigate('detail_panduan', { id: 4 })}
-                className="cursor-pointer relative rounded-3xl overflow-hidden min-h-[380px] sm:min-h-[440px] flex flex-col justify-end p-6 sm:p-8 bg-cover bg-center shadow-xs group"
-                style={{
-                  backgroundImage: "linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.5) 50%, rgba(15, 23, 42, 0.2) 100%), url('/images/panduan-penimbangan.png')"
-                }}
-              >
-                <div className="space-y-3 relative z-10 text-white">
-                  <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-xs">
-                    Panduan Posyandu
-                  </span>
-                  <h3 className="text-xl sm:text-2xl font-black text-white group-hover:text-blue-200 transition-base leading-snug">
-                    Kenapa penimbangan balita perlu dilakukan secara rutin setiap bulan?
-                  </h3>
-                  <div className="flex items-center gap-3 text-xs text-slate-300">
-                    <span><i className="bi bi-calendar3 me-1"></i> 24 Agustus 2026</span>
-                    <span>&bull;</span>
-                    <span><i className="bi bi-person me-1"></i> Bidan Siti Nurhaliza</span>
+            {daftarBlog.length === 0 ? (
+              <p className="text-center text-ink-400 text-sm py-10 lg:col-span-12">Belum ada artikel blog saat ini.</p>
+            ) : (
+              <>
+                <div className="blog-feature">
+                  <div
+                    onClick={() => navigate(`/berita/${daftarBlog[0].id}`)}
+                    className="cursor-pointer relative rounded-3xl overflow-hidden min-h-[380px] sm:min-h-[440px] flex flex-col justify-end p-6 sm:p-8 bg-cover bg-center shadow-xs group"
+                    style={{
+                      backgroundImage: `linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.5) 50%, rgba(15, 23, 42, 0.2) 100%), url('${daftarBlog[0].gambar || '/images/panduan-penimbangan.png'}')`
+                    }}
+                  >
+                    <div className="space-y-3 relative z-10 text-white">
+                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-xs">
+                        {daftarBlog[0].kategori}
+                      </span>
+                      <h3 className="text-xl sm:text-2xl font-black text-white group-hover:text-blue-200 transition-base leading-snug">
+                        {daftarBlog[0].judul}
+                      </h3>
+                      <div className="flex items-center gap-3 text-xs text-slate-300">
+                        <span><i className="bi bi-calendar3 me-1"></i> {daftarBlog[0].published_at ? formatTanggalId(daftarBlog[0].published_at) : ''}</span>
+                        <span>&bull;</span>
+                        <span><i className="bi bi-person me-1"></i> {daftarBlog[0].penulis || 'Tim Posyandu'}</span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                        {daftarBlog[0].ringkasan}
+                      </p>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white pt-1">
+                        <span>Baca Selengkapnya</span>
+                        <i className="bi bi-arrow-right"></i>
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
-                    Penimbangan rutin adalah kunci utama mendeteksi perlambatan pertumbuhan sebelum anak mengalami risiko gizi kurang atau stunting. Catatan grafik yang berkesinambungan memberi kepastian bagi orang tua.
-                  </p>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white pt-1">
-                    <span>Baca Selengkapnya</span>
-                    <i className="bi bi-arrow-right"></i>
-                  </span>
                 </div>
-              </div>
-            </div>
 
-            <div className="blog-related flex flex-col justify-between space-y-4">
-              <div className="text-xs font-extrabold uppercase tracking-wider text-[#0D47A1] flex items-center gap-1.5">
-                <i className="bi bi-star-fill text-amber-500"></i>
-                <span>Artikel Pilihan</span>
-              </div>
-
-              <div
-                onClick={() => onNavigate('detail_berita', { id: 2 })}
-                className="cursor-pointer p-5 bg-white hover:bg-slate-50 rounded-2xl border border-line shadow-xs transition-base space-y-2"
-              >
-                <span className="text-xs font-bold text-[#2196F3] block">Gizi Balita</span>
-                <h4 className="text-sm font-extrabold text-[#0D47A1]">
-                  Protein hewani dan perannya dalam masa pertumbuhan
-                </h4>
-                <div className="flex items-center justify-between pt-1 text-xs text-ink-400">
-                  <span><i className="bi bi-calendar3 me-1"></i> 19 Agustus 2026</span>
-                  <span className="text-[#2196F3] font-bold">Baca &rarr;</span>
+                <div className="blog-related flex flex-col justify-between space-y-4">
+                  <div className="text-xs font-extrabold uppercase tracking-wider text-[#0D47A1] flex items-center gap-1.5">
+                    <i className="bi bi-star-fill text-amber-500"></i>
+                    <span>Artikel Lainnya</span>
+                  </div>
+                  {daftarBlog.slice(1).map((b) => (
+                    <div
+                      key={b.id}
+                      onClick={() => navigate(`/berita/${b.id}`)}
+                      className="cursor-pointer p-5 bg-white hover:bg-slate-50 rounded-2xl border border-line shadow-xs transition-base space-y-2"
+                    >
+                      <span className="text-xs font-bold text-[#2196F3] block">{b.kategori}</span>
+                      <h4 className="text-sm font-extrabold text-[#0D47A1]">{b.judul}</h4>
+                      <div className="flex items-center justify-between pt-1 text-xs text-ink-400">
+                        <span><i className="bi bi-calendar3 me-1"></i> {b.published_at ? formatTanggalId(b.published_at) : ''}</span>
+                        <span className="text-[#2196F3] font-bold">Baca &rarr;</span>
+                      </div>
+                    </div>
+                  ))}
+                  {daftarBlog.length === 1 && (
+                    <p className="text-xs text-ink-400">Belum ada artikel lainnya.</p>
+                  )}
                 </div>
-              </div>
-
-              <div
-                onClick={() => onNavigate('detail_berita', { id: 3 })}
-                className="cursor-pointer p-5 bg-white hover:bg-slate-50 rounded-2xl border border-line shadow-xs transition-base space-y-2"
-              >
-                <span className="text-xs font-bold text-[#2196F3] block">Tips Keluarga</span>
-                <h4 className="text-sm font-extrabold text-[#0D47A1]">
-                  Daftar persiapan sederhana orang tua sebelum berangkat ke Posyandu
-                </h4>
-                <div className="flex items-center justify-between pt-1 text-xs text-ink-400">
-                  <span><i className="bi bi-calendar3 me-1"></i> 12 Agustus 2026</span>
-                  <span className="text-[#2196F3] font-bold">Baca &rarr;</span>
-                </div>
-              </div>
-
-              <div
-                onClick={() => onNavigate('detail_berita', { id: 1 })}
-                className="cursor-pointer p-5 bg-white hover:bg-slate-50 rounded-2xl border border-line shadow-xs transition-base space-y-2"
-              >
-                <span className="text-xs font-bold text-[#2196F3] block">Literasi KMS</span>
-                <h4 className="text-sm font-extrabold text-[#0D47A1]">
-                  Memahami arti garis pertumbuhan Hijau, Kuning, dan Merah di KMS
-                </h4>
-                <div className="flex items-center justify-between pt-1 text-xs text-ink-400">
-                  <span><i className="bi bi-calendar3 me-1"></i> 05 Agustus 2026</span>
-                  <span className="text-[#2196F3] font-bold">Baca &rarr;</span>
-                </div>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -698,98 +678,49 @@ export const LandingPage: React.FC<{ onNavigate: (page: string, params?: any) =>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div
-              onClick={() => onNavigate('detail_berita', { id: 1 })}
-              className="cursor-pointer bg-white rounded-2xl border border-line overflow-hidden shadow-xs hover:shadow-md transition-base flex flex-col justify-between"
-            >
-              <div className="aspect-16/10 overflow-hidden bg-slate-100">
-                <img
-                  src="/images/desain-vitamin-a.png"
-                  alt="Pemberian Vitamin A"
-                  className="w-full h-full object-cover hover:scale-105 transition-all duration-500"
-                />
-              </div>
-              <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-2">
-                    <span className="font-bold text-[#2196F3]">PANDUAN POSYANDU</span>
-                    <span className="text-ink-400"><i className="bi bi-calendar3 me-1"></i> 10 Agustus 2026</span>
+            {daftarBerita.length === 0 ? (
+              <p className="text-center text-ink-400 text-sm py-10 md:col-span-3">Belum ada berita saat ini.</p>
+            ) : (
+              daftarBerita.map((b) => (
+                <div
+                  key={b.id}
+                  onClick={() => navigate(`/berita/${b.id}`)}
+                  className="cursor-pointer bg-white rounded-2xl border border-line overflow-hidden shadow-xs hover:shadow-md transition-base flex flex-col justify-between"
+                >
+                  <div className="aspect-16/10 overflow-hidden bg-slate-100">
+                    {b.gambar ? (
+                      <img
+                        src={b.gambar}
+                        alt={b.judul}
+                        className="w-full h-full object-cover hover:scale-105 transition-all duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-ink-300">
+                        <i className="bi bi-image text-3xl"></i>
+                      </div>
+                    )}
                   </div>
-                  <h3 className="text-base font-extrabold text-[#0D47A1] mb-1.5 leading-snug">
-                    Pemberian Vitamin A
-                  </h3>
-                  <p className="text-xs text-ink-600 leading-relaxed">
-                    Pentingnya vitamin A dalam mendukung tumbuh kembang balita.
-                  </p>
-                </div>
-                <span className="text-xs font-bold text-[#2196F3] pt-2 flex items-center gap-1">
-                  <span>Baca Selengkapnya</span>
-                  <i className="bi bi-arrow-right"></i>
-                </span>
-              </div>
-            </div>
-
-            <div
-              onClick={() => onNavigate('detail_berita', { id: 2 })}
-              className="cursor-pointer bg-white rounded-2xl border border-line overflow-hidden shadow-xs hover:shadow-md transition-base flex flex-col justify-between"
-            >
-              <div className="aspect-16/10 overflow-hidden bg-slate-100">
-                <img
-                  src="/images/desain-kunjungan-bidan.png"
-                  alt="Kunjungan Bidan ke Posyandu"
-                  className="w-full h-full object-cover hover:scale-105 transition-all duration-500"
-                />
-              </div>
-              <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-2">
-                    <span className="font-bold text-[#2196F3]">KEGIATAN</span>
-                    <span className="text-ink-400"><i className="bi bi-calendar3 me-1"></i> 15 Agustus 2026</span>
+                  <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-2">
+                        <span className="font-bold text-[#2196F3]">{b.kategori}</span>
+                        <span className="text-ink-400"><i className="bi bi-calendar3 me-1"></i> {b.published_at ? formatTanggalId(b.published_at) : ''}</span>
+                      </div>
+                      <h3 className="text-base font-extrabold text-[#0D47A1] mb-1.5 leading-snug">
+                        {b.judul}
+                      </h3>
+                      <p className="text-xs text-ink-600 leading-relaxed">
+                        {b.ringkasan}
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold text-[#2196F3] pt-2 flex items-center gap-1">
+                      <span>Baca Selengkapnya</span>
+                      <i className="bi bi-arrow-right"></i>
+                    </span>
                   </div>
-                  <h3 className="text-base font-extrabold text-[#0D47A1] mb-1.5 leading-snug">
-                    Kunjungan Bidan ke Posyandu
-                  </h3>
-                  <p className="text-xs text-ink-600 leading-relaxed">
-                    Kegiatan kunjungan bidan dan pemantauan balita.
-                  </p>
                 </div>
-                <span className="text-xs font-bold text-[#2196F3] pt-2 flex items-center gap-1">
-                  <span>Baca Selengkapnya</span>
-                  <i className="bi bi-arrow-right"></i>
-                </span>
-              </div>
-            </div>
-
-            <div
-              onClick={() => onNavigate('detail_berita', { id: 3 })}
-              className="cursor-pointer bg-white rounded-2xl border border-line overflow-hidden shadow-xs hover:shadow-md transition-base flex flex-col justify-between"
-            >
-              <div className="aspect-16/10 overflow-hidden bg-slate-100">
-                <img
-                  src="/images/desain-pmt-gizi.png"
-                  alt="PMT dan Gizi Seimbang"
-                  className="w-full h-full object-cover hover:scale-105 transition-all duration-500"
-                />
-              </div>
-              <div className="p-6 space-y-3 flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center justify-between text-xs mb-2">
-                    <span className="font-bold text-[#2196F3]">GIZI BALITA</span>
-                    <span className="text-ink-400"><i className="bi bi-calendar3 me-1"></i> 29 Juli 2026</span>
-                  </div>
-                  <h3 className="text-base font-extrabold text-[#0D47A1] mb-1.5 leading-snug">
-                    PMT dan Gizi Seimbang
-                  </h3>
-                  <p className="text-xs text-ink-600 leading-relaxed">
-                    Contoh pemberian makanan tambahan yang seimbang.
-                  </p>
-                </div>
-                <span className="text-xs font-bold text-[#2196F3] pt-2 flex items-center gap-1">
-                  <span>Baca Selengkapnya</span>
-                  <i className="bi bi-arrow-right"></i>
-                </span>
-              </div>
-            </div>
+              ))
+            )}
           </div>
         </div>
       </section>

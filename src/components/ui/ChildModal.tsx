@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { Balita } from '../../types';
+import { DUSUN_LIST } from '../../utils/constants';
 
 interface ChildModalProps {
   isOpen: boolean;
@@ -8,41 +9,15 @@ interface ChildModalProps {
   onSave: (data: Omit<Balita, 'id'>, id?: number) => Promise<void>;
 }
 
-export const ChildModal: React.FC<ChildModalProps> = ({
-  isOpen,
-  initialData,
-  onClose,
-  onSave
-}) => {
-  const [nama, setNama] = useState('');
-  const [nik, setNik] = useState('');
-  const [tanggalLahir, setTanggalLahir] = useState('');
-  const [jenisKelamin, setJenisKelamin] = useState<'L' | 'P'>('L');
-  const [namaOrtu, setNamaOrtu] = useState('');
-  const [dusun, setDusun] = useState('Gamping Wetan');
+const ChildForm: React.FC<Omit<ChildModalProps, 'isOpen'>> = ({ initialData, onClose, onSave }) => {
+  const [nama, setNama] = useState(initialData?.nama ?? '');
+  const [nik, setNik] = useState(initialData?.nik ?? '');
+  const [tanggalLahir, setTanggalLahir] = useState(initialData?.tanggal_lahir ?? '');
+  const [jenisKelamin, setJenisKelamin] = useState<'L' | 'P'>(initialData?.jenis_kelamin ?? 'L');
+  const [namaOrtu, setNamaOrtu] = useState(initialData?.nama_ortu ?? '');
+  const [dusun, setDusun] = useState(initialData?.dusun ?? 'Gamping Wetan');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (initialData) {
-      setNama(initialData.nama);
-      setNik(initialData.nik || '');
-      setTanggalLahir(initialData.tanggal_lahir);
-      setJenisKelamin(initialData.jenis_kelamin);
-      setNamaOrtu(initialData.nama_ortu);
-      setDusun(initialData.dusun);
-    } else {
-      setNama('');
-      setNik('');
-      setTanggalLahir('');
-      setJenisKelamin('L');
-      setNamaOrtu('');
-      setDusun('Gamping Wetan');
-    }
-    setError('');
-  }, [initialData, isOpen]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +43,6 @@ export const ChildModal: React.FC<ChildModalProps> = ({
       onClose();
     } catch {
       setError('Gagal menyimpan data balita.');
-    } finally {
       setLoading(false);
     }
   };
@@ -162,10 +136,9 @@ export const ChildModal: React.FC<ChildModalProps> = ({
                 value={dusun}
                 onChange={(e) => setDusun(e.target.value)}
               >
-                <option value="Gamping Wetan">Dusun Gamping Wetan</option>
-                <option value="Boharan">Dusun Boharan</option>
-                <option value="Kasengan">Dusun Kasengan</option>
-                <option value="Bendomungal">Dusun Bendomungal</option>
+                {DUSUN_LIST.map((d) => (
+                  <option key={d} value={d}>Dusun {d}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -203,5 +176,18 @@ export const ChildModal: React.FC<ChildModalProps> = ({
         </form>
       </div>
     </div>
+  );
+};
+
+export const ChildModal: React.FC<ChildModalProps> = ({ isOpen, initialData, onClose, onSave }) => {
+  if (!isOpen) return null;
+
+  return (
+    <ChildForm
+      key={initialData?.id ?? 'baru'}
+      initialData={initialData}
+      onClose={onClose}
+      onSave={onSave}
+    />
   );
 };

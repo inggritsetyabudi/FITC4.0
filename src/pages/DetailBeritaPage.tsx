@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { beritaService } from '../services/api';
+import { useAsyncData } from '../hooks/useAsyncData';
 import type { Berita } from '../types';
 import { formatTanggalId } from '../utils/helpers';
 
@@ -15,24 +17,15 @@ const panduan: Berita = {
   isi: ''
 };
 
-export const DetailBeritaPage: React.FC<{
-  id: number;
-  onNavigate: (page: string, params?: any) => void;
-}> = ({ id, onNavigate }) => {
-  const [berita, setBerita] = useState<Berita | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+export const DetailBeritaPage: React.FC = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const isPanduan = !id;
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const item = id === 4 ? panduan : await beritaService.getById(id);
-        setBerita(item || null);
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, [id]);
+  const { data: berita, loading } = useAsyncData(
+    () => (isPanduan ? Promise.resolve(panduan) : beritaService.getById(Number(id))),
+    [id]
+  );
 
   if (loading) {
     return (
@@ -50,7 +43,7 @@ export const DetailBeritaPage: React.FC<{
         <h2 className="text-xl font-bold text-forest-900">Artikel Tidak Ditemukan</h2>
         <p className="text-sm text-ink-500">Artikel yang Anda cari tidak tersedia atau telah diarsipkan.</p>
         <button
-          onClick={() => onNavigate('landing')}
+          onClick={() => navigate('/')}
           className="px-4 py-2 bg-primary text-white text-sm font-semibold rounded-lg"
         >
           Kembali ke Beranda
@@ -60,10 +53,10 @@ export const DetailBeritaPage: React.FC<{
   }
 
   return (
-    <div className={`article-page ${id === 4 ? 'guide-page' : ''} min-h-screen font-sans`}>
+    <div className={`article-page ${isPanduan ? 'guide-page' : ''} min-h-screen font-sans`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {id !== 4 && <button
-          onClick={() => onNavigate('landing')}
+        {!isPanduan && <button
+          onClick={() => navigate('/')}
           className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-50 text-xs font-semibold text-[#3D5F7D] rounded-xl border border-[#D1E3F2] shadow-xs transition-base mb-6"
         >
           <i className="bi bi-arrow-left"></i>
@@ -103,7 +96,7 @@ export const DetailBeritaPage: React.FC<{
             )}
 
             <div className="article-body space-y-5">
-              {id === 4 ? <>
+              {isPanduan ? <>
                 <p>Penimbangan rutin setiap bulan membantu kader dan bidan melihat perubahan berat dan tinggi<br className="hidden lg:block" /> badan balita secara berkesinambungan.</p>
                 <p>Catatan pertumbuhan yang konsisten memudahkan pemantauan ketika berat badan tidak bertambah sesuai harapan dan membantu keluarga mengambil tindak lanjut lebih cepat.</p>
                 <h2>Apa yang dipantau?</h2>
@@ -119,7 +112,7 @@ export const DetailBeritaPage: React.FC<{
                 Dipublikasikan oleh Tim Layanan Kesehatan Desa Sukatani
               </span>
               <button
-                onClick={() => onNavigate('landing')}
+                onClick={() => navigate('/')}
                 className="px-4 py-2 bg-[#2196F3] hover:bg-[#1976D2] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-base self-start sm:self-auto shadow-xs"
               >
                 <span>Lihat Panduan Lainnya</span>
@@ -135,14 +128,14 @@ export const DetailBeritaPage: React.FC<{
                 <span>Berita &amp; Artikel Lainnya</span>
               </h3>
               <div className="article-related-list space-y-3">
-                {(id === 4 ? [
+                {(isPanduan ? [
                   { id: 3, kategori: 'GIZI BALITA', judul: 'Protein hewani dan perannya dalam masa pertumbuhan', tanggal: '19 Agustus 2026' },
                   { id: 4, kategori: 'TIPS KELUARGA', judul: 'Daftar persiapan sederhana orang tua sebelum berangkat ke Posyandu', tanggal: '12 Agustus 2026' },
                   { id: 1, kategori: 'GIZI BALITA', judul: 'Vitamin A dan dukungannya untuk tumbuh kembang', tanggal: '10 Agustus 2026' }
                 ] : [
                   { id: 2, kategori: 'KEGIATAN', judul: 'Kunjungan Bidan ke Posyandu', tanggal: '5 Agustus 2026' },
                   { id: 3, kategori: 'GIZI BALITA', judul: 'PMT dan Gizi Seimbang', tanggal: '29 Juli 2026' }
-                ]).map(item => <button key={item.id} onClick={() => onNavigate(item.id === 4 ? 'detail_panduan' : 'detail_berita', { id: item.id })} className="w-full text-left p-3 bg-[#F0F7FF] rounded border border-line space-y-2">
+                ]).map(item => <button key={item.id} onClick={() => navigate(item.id === 4 ? '/panduan' : `/berita/${item.id}`)} className="w-full text-left p-3 bg-[#F0F7FF] rounded border border-line space-y-2">
                   <span className="block text-[11px] text-primary">{item.kategori}</span>
                   <span className="block text-xs font-bold text-[#0D47A1]">{item.judul}</span>
                   <span className="block text-xs text-ink-500"><i className="bi bi-calendar3" /> {item.tanggal}</span>
@@ -156,7 +149,7 @@ export const DetailBeritaPage: React.FC<{
                 Pusat informasi, pemantauan kurva KMS digital, dan penimbangan balita Desa Sukatani.
               </p>
               <button
-                onClick={() => onNavigate('login')}
+                onClick={() => navigate('/login')}
                 className="w-full py-2.5 bg-[#2196F3] hover:bg-[#1976D2] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-base shadow-xs"
               >
                 <i className="bi bi-box-arrow-in-right"></i>

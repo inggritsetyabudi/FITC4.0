@@ -46,7 +46,7 @@ export function hitungUmur(tanggalLahirStr: string, tanggalPatokanStr?: string):
 
   const totalBulan = tahun * 12 + bulan;
 
-  let teks = '';
+  let teks: string;
   if (tahun > 0) {
     teks = bulan > 0 ? `${tahun} tahun ${bulan} bulan` : `${tahun} tahun`;
   } else if (bulan > 0) {
@@ -57,8 +57,6 @@ export function hitungUmur(tanggalLahirStr: string, tanggalPatokanStr?: string):
 
   return { tahun, bulan, hari, total_bulan: totalBulan, teks };
 }
-
-export const hitungUmurLengkap = hitungUmur;
 
 export const STATUS_CONFIG: Record<StatusGizi, { label: string; icon: string; className: string }> = {
   normal: {
