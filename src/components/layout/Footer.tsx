@@ -163,7 +163,7 @@ export const Footer: React.FC = () => {
 
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/70">
           <div>
-            Copyright &copy; 2026 <strong className="text-white">Posyandu Pintar</strong> &mdash; FITCOM 4.0. Hak Cipta Dilindungi.
+            Copyright &copy; 2026 <strong className="text-white">Posyandu Pintar</strong>. All rights reserved.
           </div>
           <div className="flex gap-4">
             <a href="#tentang" className="hover:text-white transition-base">Tentang Kami</a>

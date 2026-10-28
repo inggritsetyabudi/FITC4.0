@@ -9,11 +9,14 @@ export const JadwalPage: React.FC = () => {
   const { data: jadwalList = [], loading, error, reload } = useAsyncData(() => jadwalService.getAll());
   const [filterStatus, setFilterStatus] = useState<string>('semua');
   const [showModal, setShowModal] = useState<boolean>(false);
+  const [editing, setEditing] = useState<Jadwal | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
   const [formData, setFormData] = useState<Partial<Jadwal>>({
     nama_kegiatan: 'Penimbangan Balita Bulanan',
     dusun: 'Gamping Wetan',
     lokasi: 'Balai Dusun Gamping Wetan',
-    tanggal: '2026-09-12',
+    tanggal: new Date().toLocaleDateString('sv-SE'),
     waktu_mulai: '08:00',
     waktu_selesai: '11:30',
     petugas: 'Bu Sari',
@@ -22,11 +25,55 @@ export const JadwalPage: React.FC = () => {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.nama_kegiatan || !formData.dusun || !formData.tanggal) return;
+    if (!formData.nama_kegiatan || !formData.dusun || !formData.tanggal) {
+      setFormError('Nama kegiatan, dusun, dan tanggal wajib diisi.');
+      return;
+    }
 
-    await jadwalService.create(formData as Omit<Jadwal, 'id'>);
-    setShowModal(false);
-    reload();
+    setSaving(true);
+    setFormError('');
+    try {
+      if (editing) {
+        await jadwalService.update(editing.id, formData);
+      } else {
+        await jadwalService.create(formData as Omit<Jadwal, 'id'>);
+      }
+      setShowModal(false);
+      setEditing(null);
+      reload();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Jadwal gagal disimpan.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openAdd = () => {
+    setEditing(null);
+    setFormError('');
+    setFormData({
+      nama_kegiatan: 'Penimbangan Balita Bulanan', dusun: DUSUN_LIST[0],
+      lokasi: `Balai Dusun ${DUSUN_LIST[0]}`, tanggal: new Date().toLocaleDateString('sv-SE'),
+      waktu_mulai: '08:00', waktu_selesai: '11:30', petugas: '', status: 'rencana'
+    });
+    setShowModal(true);
+  };
+
+  const openEdit = (item: Jadwal) => {
+    setEditing(item);
+    setFormError('');
+    setFormData({ ...item });
+    setShowModal(true);
+  };
+
+  const handleDelete = async (item: Jadwal) => {
+    if (!window.confirm(`Hapus agenda “${item.nama_kegiatan}”?`)) return;
+    try {
+      await jadwalService.delete(item.id);
+      reload();
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : 'Jadwal gagal dihapus.');
+    }
   };
 
   const filtered = jadwalList.filter((j) => {
@@ -46,7 +93,7 @@ export const JadwalPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setShowModal(true)}
+          onClick={openAdd}
           className="px-4 py-2.5 bg-[#2196F3] hover:bg-[#1976D2] text-white text-xs font-bold rounded-xl flex items-center gap-2 self-start sm:self-auto shadow-xs transition-base"
         >
           <i className="bi bi-calendar-event"></i>
@@ -96,6 +143,7 @@ export const JadwalPage: React.FC = () => {
                   <th className="py-4 px-4">Penanggung Jawab</th>
                   <th className="py-4 px-4">Keterangan</th>
                   <th className="py-4 px-4 text-center">Status</th>
+                  <th className="py-4 px-4 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -128,9 +176,19 @@ export const JadwalPage: React.FC = () => {
                       {item.catatan || 'Penimbangan dan pemantauan tumbuh kembang balita.'}
                     </td>
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                      {item.status === 'selesai' && (
-                        <span className="text-emerald-600 font-semibold text-xs">Selesai</span>
-                      )}
+                      <span className={`font-semibold text-xs ${item.status === 'selesai' ? 'text-emerald-600' : 'text-blue-700'}`}>
+                        {item.status === 'selesai' ? 'Selesai' : 'Akan datang'}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <div className="flex justify-end gap-2">
+                        <button type="button" onClick={() => openEdit(item)} className="px-3 py-2 rounded-lg border border-line text-[#1976D2] hover:bg-blue-50" aria-label={`Ubah ${item.nama_kegiatan}`}>
+                          <i className="bi bi-pencil"></i>
+                        </button>
+                        <button type="button" onClick={() => handleDelete(item)} className="px-3 py-2 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50" aria-label={`Hapus ${item.nama_kegiatan}`}>
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -144,7 +202,8 @@ export const JadwalPage: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs overflow-y-auto p-4">
           <div className="min-h-full flex items-center justify-center">
             <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border border-line shadow-panel space-y-4">
-            <h3 className="text-lg font-extrabold text-[#0D47A1]">Tambah Agenda Jadwal Baru</h3>
+            <h3 className="text-lg font-extrabold text-[#0D47A1]">{editing ? 'Ubah Agenda Jadwal' : 'Tambah Agenda Jadwal Baru'}</h3>
+            {formError && <p role="alert" className="rounded-xl bg-rose-50 border border-rose-200 px-3 py-2 text-xs text-rose-700">{formError}</p>}
             <form onSubmit={handleSave} className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-ink-700 uppercase mb-1">Nama Agenda Kegiatan</label>
@@ -233,7 +292,7 @@ export const JadwalPage: React.FC = () => {
                   type="submit"
                   className="px-4 py-2 text-xs font-bold bg-[#2196F3] text-white rounded-xl hover:bg-[#1976D2]"
                 >
-                  Simpan Agenda
+                  {saving ? 'Menyimpan…' : editing ? 'Simpan Perubahan' : 'Simpan Agenda'}
                 </button>
               </div>
             </form>

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Outlet, RouterProvider, createBrowserRouter, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import type { UserRole } from './types';
 import { LandingLayout } from './components/layout/LandingLayout';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import { LandingPage } from './pages/LandingPage';
@@ -23,6 +24,14 @@ function RequireAuth() {
   const { user, loading } = useAuth();
   if (loading) return null;
   return user ? <Outlet /> : <Navigate to="/login" replace />;
+}
+
+function RequireRole({ roles }: { roles: UserRole[] }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
+  return <Outlet />;
 }
 
 function ScrollToTop() {
@@ -62,16 +71,24 @@ const router = createBrowserRouter([
         element: <DashboardLayout />,
         children: [
           { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/profil', element: <ProfilPage /> },
+          {
+            element: <RequireRole roles={['admin']} />,
+            children: [
+              { path: '/petugas', element: <PetugasPage /> },
+              { path: '/jadwal', element: <JadwalPage /> },
+              { path: '/laporan', element: <LaporanPage /> }
+            ]
+          },
+          {
+            element: <RequireRole roles={['bidan', 'admin']} />,
+            children: [{ path: '/blog', element: <BlogPage /> }]
+          },
           { path: '/balita', element: <BalitaPage /> },
           { path: '/balita/:id', element: <DetailBalitaPage /> },
           { path: '/pengukuran', element: <PengukuranPage /> },
           { path: '/prioritas', element: <PrioritasPage /> },
           { path: '/rekap', element: <RekapPage /> },
-          { path: '/petugas', element: <PetugasPage /> },
-          { path: '/jadwal', element: <JadwalPage /> },
-          { path: '/blog', element: <BlogPage /> },
-          { path: '/laporan', element: <LaporanPage /> },
-          { path: '/profil', element: <ProfilPage /> },
           { path: '*', element: <NotFoundPage /> }
         ]
       }

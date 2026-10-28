@@ -9,8 +9,8 @@ class Balita
         $sql = "SELECT a.id, a.nama, a.nik, a.tanggal_lahir, a.jenis_kelamin, a.nama_ortu, a.status,
                 d.nama AS dusun,
                 (SELECT p.kategori_status FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS status_terakhir,
-                (SELECT p.berat_kg FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS berat_terakhir,
-                (SELECT p.tinggi_cm FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS tinggi_terakhir,
+                (SELECT CAST(p.berat_kg AS DOUBLE) FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS berat_terakhir,
+                (SELECT CAST(p.tinggi_cm AS DOUBLE) FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS tinggi_terakhir,
                 (SELECT p.tanggal_ukur FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS tanggal_ukur_terakhir
                 FROM balita a
                 JOIN dusun d ON d.id = a.dusun_id
@@ -43,8 +43,8 @@ class Balita
         $sql = "SELECT a.id, a.nama, a.nik, a.tanggal_lahir, a.jenis_kelamin, a.nama_ortu, a.status,
                 d.nama AS dusun,
                 (SELECT p.kategori_status FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS status_terakhir,
-                (SELECT p.berat_kg FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS berat_terakhir,
-                (SELECT p.tinggi_cm FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS tinggi_terakhir,
+                (SELECT CAST(p.berat_kg AS DOUBLE) FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS berat_terakhir,
+                (SELECT CAST(p.tinggi_cm AS DOUBLE) FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS tinggi_terakhir,
                 (SELECT p.tanggal_ukur FROM pengukuran p WHERE p.balita_id = a.id ORDER BY p.tanggal_ukur DESC, p.id DESC LIMIT 1) AS tanggal_ukur_terakhir
                 FROM balita a
                 JOIN dusun d ON d.id = a.dusun_id

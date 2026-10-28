@@ -62,8 +62,8 @@ export const Sidebar: React.FC = () => {
     <aside className="app-sidebar w-64 bg-white border-r border-line flex flex-col h-screen sticky top-0 shrink-0 select-none z-30">
       <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="p-5 border-b border-line flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-[#2196F3] flex items-center justify-center text-white text-lg shadow-xs shrink-0">
-            <i className="bi bi-heart-fill"></i>
+          <div className="sidebar-brand-mark hidden md:flex w-9 h-9 rounded-xl bg-white border border-line overflow-hidden items-center justify-center shrink-0">
+            <img src="/images/logo sementara.png" alt="Logo Posyandu Pintar" className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="font-bold text-[#0D47A1] text-base leading-tight">Posyandu Pintar</h1>

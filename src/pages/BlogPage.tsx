@@ -11,7 +11,7 @@ const KOSONG: Partial<Berita> = {
   isi: '',
   gambar: '',
   tipe: 'berita',
-  status: 'draft'
+  status: 'published'
 };
 
 export const BlogPage: React.FC = () => {
@@ -160,20 +160,12 @@ export const BlogPage: React.FC = () => {
                     <span className="text-[11px] text-[#2196F3] font-semibold">{b.kategori}</span>
                   </td>
                   <td className="py-3 px-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                      b.tipe === 'blog'
-                        ? 'bg-violet-50 text-violet-700 border-violet-200'
-                        : 'bg-amber-50 text-amber-700 border-amber-200'
-                    }`}>
+                    <span className={`record-label ${b.tipe === 'blog' ? 'record-label-blog' : 'record-label-news'}`}>
                       {b.tipe === 'blog' ? 'Blog' : 'Berita'}
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${
-                      b.status === 'published'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : 'bg-slate-50 text-ink-500 border-line'
-                    }`}>
+                    <span className={`record-label ${b.status === 'published' ? 'record-label-published' : 'record-label-draft'}`}>
                       {b.status === 'published' ? 'Terbit' : 'Draft'}
                     </span>
                   </td>

@@ -94,7 +94,7 @@ export const PetugasPage: React.FC = () => {
               Tenaga kesehatan yang memiliki wewenang evaluasi kurva tumbuh kembang dan rujukan
             </p>
           </div>
-          <span className="px-3 py-1 bg-[#2196F3] text-white text-xs font-semibold rounded-full self-start sm:self-auto">
+          <span className="staff-section-count staff-section-count-blue self-start sm:self-auto">
             {bidanList.length} Tenaga Medis
           </span>
         </div>
@@ -151,7 +151,7 @@ export const PetugasPage: React.FC = () => {
               Petugas pencatatan antropometri dan pelayanan lapangan di pos masing-masing dusun
             </p>
           </div>
-          <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold rounded-full self-start sm:self-auto">
+          <span className="staff-section-count staff-section-count-green self-start sm:self-auto">
             {kaderList.length} Kader Aktif
           </span>
         </div>

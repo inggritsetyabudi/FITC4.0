@@ -66,7 +66,7 @@ export const DetailBeritaPage: React.FC = () => {
         <div className="article-grid">
           <article className="bg-white rounded-2xl border border-[#D1E3F2] p-6 sm:p-8 shadow-xs space-y-6">
             <div className="space-y-2">
-              <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#2196F3] block">
+              <span className="article-category-kicker">
                 {berita.kategori || 'PANDUAN POSYANDU'}
               </span>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-[#0D47A1] leading-tight">

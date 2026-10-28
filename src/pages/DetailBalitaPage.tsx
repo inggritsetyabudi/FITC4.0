@@ -4,6 +4,9 @@ import { balitaService, pengukuranService } from '../services/api';
 import { useAsyncData } from '../hooks/useAsyncData';
 import { hitungUmur, formatTanggalId } from '../utils/helpers';
 import { StatusBadge } from '../components/ui/StatusBadge';
+import type { ChartData, ChartOptions } from 'chart.js';
+
+const LineChartView = React.lazy(() => import('../components/ui/ChartViews').then((module) => ({ default: module.LineChartView })));
 
 export const DetailBalitaPage: React.FC = () => {
   const { id } = useParams();
@@ -51,6 +54,55 @@ export const DetailBalitaPage: React.FC = () => {
   const deltaBb = prevPengukuran && balita.berat_terakhir
     ? (balita.berat_terakhir - prevPengukuran.berat_kg).toFixed(1)
     : null;
+  const growthValues = sortedRiwayat.map((item) => chartMetric === 'bb' ? item.berat_kg : item.tinggi_cm);
+  const growthUnit = chartMetric === 'bb' ? 'kg' : 'cm';
+  const growthMin = growthValues.length ? Math.max(0, Math.floor(Math.min(...growthValues) - 1)) : 0;
+  const growthMax = growthValues.length ? Math.ceil(Math.max(...growthValues) + 1) : 1;
+  const growthChartData: ChartData<'line'> = {
+    labels: sortedRiwayat.map((item) => formatTanggalId(item.tanggal_ukur, true)),
+    datasets: [{
+      label: chartMetric === 'bb' ? 'Berat badan' : 'Tinggi badan',
+      data: growthValues,
+      borderColor: '#0D47A1',
+      backgroundColor: 'rgba(13, 71, 161, .10)',
+      fill: true,
+      tension: .32,
+      borderWidth: 3,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      pointBackgroundColor: '#0D47A1',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2
+    }]
+  };
+  const growthChartOptions: ChartOptions<'line'> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: true,
+        backgroundColor: '#0D2744',
+        padding: 10,
+        callbacks: { label: (context) => `${context.parsed.y} ${growthUnit}` }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        border: { display: false },
+        ticks: { color: '#607D99', maxRotation: 0, autoSkip: true, maxTicksLimit: 7, font: { size: 10 } }
+      },
+      y: {
+        min: growthMin,
+        max: growthMax,
+        border: { display: false },
+        grid: { color: '#E8EFF5' },
+        ticks: { color: '#607D99', maxTicksLimit: 6, font: { size: 10 } }
+      }
+    }
+  };
 
   return (
     <div className="child-detail-page space-y-6 max-w-6xl mx-auto">
@@ -147,26 +199,17 @@ export const DetailBalitaPage: React.FC = () => {
         </div>
 
         <div className="w-full h-56">
-          {sortedRiwayat.length === 0 ? <p className="text-center text-ink-500 py-20">Belum ada riwayat pengukuran.</p> : <svg viewBox="0 0 1200 300" role="img" aria-label={`Grafik ${chartMetric === 'bb' ? 'berat' : 'tinggi'} badan ${balita.nama}`} className="w-full h-full select-none">
-            {(() => {
-              const values = sortedRiwayat.map(item => chartMetric === 'bb' ? item.berat_kg : item.tinggi_cm);
-              const min = Math.min(...values) - 1;
-              const max = Math.max(...values) + 1;
-              const points = values.map((value, index) => ({
-                x: values.length === 1 ? 600 : 60 + index * 1080 / (values.length - 1),
-                y: 250 - (value - min) / (max - min) * 210
-              }));
-              const line = points.map(point => `${point.x},${point.y}`).join(' L ');
-              return <>
-                <path d={`M ${line} L ${points[points.length - 1].x},260 L ${points[0].x},260 Z`} fill="#0D47A1" fillOpacity="0.1" />
-                <path data-growth-line d={`M ${line}`} fill="none" stroke="#0D47A1" strokeWidth="4" strokeLinejoin="round" />
-                {points.map((point, index) => <g key={sortedRiwayat[index].id}>
-                  <circle cx={point.x} cy={point.y} r="7" fill="#0D47A1" stroke="white" strokeWidth="3"><title>{formatTanggalId(sortedRiwayat[index].tanggal_ukur)}: {values[index]} {chartMetric === 'bb' ? 'kg' : 'cm'}</title></circle>
-                  <text x={point.x} y="288" textAnchor="middle" fontSize="12" fill="#607D99">{formatTanggalId(sortedRiwayat[index].tanggal_ukur, true)}</text>
-                </g>)}
-              </>;
-            })()}
-          </svg>}
+          {sortedRiwayat.length === 0 ? (
+            <p className="text-center text-ink-500 py-20">Belum ada riwayat pengukuran.</p>
+          ) : (
+            <React.Suspense fallback={<div className="h-full animate-pulse rounded-xl bg-slate-50" />}>
+              <LineChartView
+                data={growthChartData}
+                options={growthChartOptions}
+                ariaLabel={`Grafik ${chartMetric === 'bb' ? 'berat' : 'tinggi'} badan ${balita.nama}`}
+              />
+            </React.Suspense>
+          )}
         </div>
       </div>
 

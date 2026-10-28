@@ -6,22 +6,19 @@ import { hitungUmur, formatTanggalId } from '../utils/helpers';
 import { DUSUN_LIST } from '../utils/constants';
 import type { Pengukuran } from '../types';
 
-const STATUS_VISUAL: Record<string, { border: string; badge: string; avatar: string; text: string }> = {
+const STATUS_VISUAL: Record<string, { border: string; avatar: string; text: string }> = {
   prioritas: {
     border: 'border-l-rose-500',
-    badge: 'bg-rose-50 text-rose-700 border border-rose-200',
     avatar: 'bg-rose-100 text-rose-700',
     text: 'Prioritas Bidan'
   },
   berisiko: {
     border: 'border-l-rose-500',
-    badge: 'bg-rose-50 text-rose-700 border border-rose-200',
     avatar: 'bg-rose-100 text-rose-700',
     text: 'Prioritas Bidan'
   },
   pemantauan: {
     border: 'border-l-amber-500',
-    badge: 'bg-amber-50 text-amber-800 border border-amber-200',
     avatar: 'bg-amber-100 text-amber-800',
     text: 'Perlu Pemantauan'
   }
@@ -186,7 +183,7 @@ export const PrioritasPage: React.FC = () => {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <span className="text-lg font-black text-[#0D47A1]">{b.nama}</span>
-                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${visual.badge}`}>
+                      <span className={`priority-label ${mendesak ? 'priority-label-urgent' : 'priority-label-watch'}`}>
                         {visual.text}
                       </span>
                       <span className="px-2 py-0.5 rounded-md bg-[#F0F7FF] text-[#607D99] font-mono text-[11px] border border-line">

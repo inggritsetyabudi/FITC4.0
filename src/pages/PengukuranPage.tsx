@@ -132,7 +132,7 @@ export const PengukuranPage: React.FC = () => {
                   Catatan Terakhir: <strong className="text-[#0D47A1]">{selectedBalita.berat_terakhir ? `${selectedBalita.berat_terakhir} kg · ${selectedBalita.tinggi_terakhir} cm (${formatTanggalId(selectedBalita.tanggal_ukur_terakhir, true)})` : 'Belum pernah diukur'}</strong>
                 </div>
               </div>
-              <span className="px-3 py-1 rounded-full bg-white text-[#3D5F7D] font-medium border border-[#D1E3F2] text-xs shrink-0">
+              <span className="age-reading-label shrink-0">
                 {umur.teks}
               </span>
             </div>

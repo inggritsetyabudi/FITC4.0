@@ -6,7 +6,7 @@ class Pengukuran
 
     public function getAll(?string $bulan = null, ?string $dusun = null, ?string $status = null, ?int $balitaId = null): array
     {
-        $sql = "SELECT p.id, p.balita_id, p.tanggal_ukur, p.berat_kg, p.tinggi_cm, p.kategori_status, p.catatan,
+        $sql = "SELECT p.id, p.balita_id, p.tanggal_ukur, CAST(p.berat_kg AS DOUBLE) AS berat_kg, CAST(p.tinggi_cm AS DOUBLE) AS tinggi_cm, p.kategori_status, p.catatan,
                 a.nama AS nama_anak, d.nama AS dusun, a.nama_ortu, a.jenis_kelamin,
                 TIMESTAMPDIFF(MONTH, a.tanggal_lahir, p.tanggal_ukur) AS usia_bulan
                 FROM pengukuran p

@@ -2,17 +2,42 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Jadwal } from '../types';
 import { useAsyncData } from '../hooks/useAsyncData';
-import { beritaService } from '../services/api';
+import { beritaService, jadwalService } from '../services/api';
 import { formatTanggalId } from '../utils/helpers';
+
+const FAQ_LIST = [
+  {
+    q: 'Apa itu Posyandu Pintar?',
+    a: 'Posyandu Pintar adalah sistem informasi pencatatan tumbuh kembang balita yang membantu kader mencatat hasil timbang bulanan dan membantu bidan memantau perkembangan anak secara digital, tanpa buku catatan fisik.'
+  },
+  {
+    q: 'Siapa saja yang boleh menggunakan aplikasi ini?',
+    a: 'Aplikasi ini dipakai oleh tiga peran: Kader untuk mencatat timbangan, Bidan Desa untuk memantau dan menindaklanjuti balita prioritas, dan Admin Desa untuk mengelola petugas, jadwal, serta laporan.'
+  },
+  {
+    q: 'Bagaimana cara mencatat timbangan balita?',
+    a: 'Masuk (login) sebagai kader, buka menu "Catat Pengukuran", lalu pilih anak, tanggal timbang, berat, dan tinggi badan. Usia anak dan evaluasi status gizi akan terhitung otomatis.'
+  },
+  {
+    q: 'Apakah data balita saya aman?',
+    a: 'Ya. Data tersimpan di basis data desa dan hanya dapat diakses oleh petugas yang login. Setiap peran memiliki kewenangan berbeda sehingga kader tidak dapat mengelola data milik peran lain.'
+  },
+  {
+    q: 'Di mana saya bisa melihat jadwal posyandu?',
+    a: 'Jadwal pelayanan tersedia pada bagian "Jadwal Posyandu" di halaman publik ini, dan dapat dikelola oleh Admin Desa melalui dasbor.'
+  }
+];
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const [faqOpen, setFaqOpen] = useState<number | null>(0);
   const [kmsJk, setKmsJk] = useState<'L' | 'P'>('L');
   const [kmsUsia, setKmsUsia] = useState<number>(24);
   const [kmsBerat, setKmsBerat] = useState<number>(11.5);
   const [kmsTinggi, setKmsTinggi] = useState<number>(86.0);
   const { data: daftarBerita = [] } = useAsyncData(() => beritaService.getAll('berita'));
   const { data: daftarBlog = [] } = useAsyncData(() => beritaService.getAll('blog'));
+  const { data: jadwalList = [], loading: jadwalLoading, error: jadwalError } = useAsyncData(() => jadwalService.getAll());
 
   const calculateKms = () => {
     let bbIdealMin = (kmsUsia * 0.2) + 7.5;
@@ -25,7 +50,6 @@ export const LandingPage: React.FC = () => {
     if (kmsBerat < bbIdealMin * 0.85) {
       return {
         status: 'Prioritas Bidan',
-        badgeClass: 'bg-rose-50 text-rose-700 border border-rose-200',
         icon: 'bi-exclamation-triangle-fill',
         penjelasan: `Berat badan ${kmsBerat} kg berada di bawah batas kurva penimbangan standar untuk balita usia ${kmsUsia} bulan.`,
         saran: 'Sangat disarankan segera berkonsultasi dengan Bidan Desa atau petugas Puskesmas saat kunjungan Posyandu terdekat.'
@@ -33,7 +57,6 @@ export const LandingPage: React.FC = () => {
     } else if (kmsBerat < bbIdealMin || kmsBerat > bbIdealMax * 1.2) {
       return {
         status: 'Perlu Pemantauan',
-        badgeClass: 'bg-amber-50 text-amber-800 border border-amber-200',
         icon: 'bi-exclamation-circle-fill',
         penjelasan: `Berat badan ${kmsBerat} kg mendekati garis batas pemantauan pertumbuhan usia ${kmsUsia} bulan.`,
         saran: 'Evaluasi porsi makan harian dan pastikan asupan protein hewani terpenuhi. Lakukan penimbangan ulang bulan depan.'
@@ -41,7 +64,6 @@ export const LandingPage: React.FC = () => {
     }
     return {
       status: 'Normal & Ideal',
-      badgeClass: 'bg-emerald-50 text-emerald-800 border border-emerald-200',
       icon: 'bi-check-circle-fill',
       penjelasan: `Berat ${kmsBerat} kg dan tinggi ${kmsTinggi} cm berada dalam kisaran pertumbuhan yang wajar untuk balita usia ${kmsUsia} bulan.`,
       saran: 'Pertahankan pemberian makanan bergizi seimbang (protein hewani, sayur, buah) dan timbang rutin di Posyandu setiap bulan.'
@@ -52,49 +74,9 @@ export const LandingPage: React.FC = () => {
     ...calculateKms(), usia: kmsUsia, berat: kmsBerat, tinggi: kmsTinggi
   }));
 
-  const staticJadwal: Jadwal[] = [
-    {
-      id: 1,
-      nama_kegiatan: 'Penimbangan Balita Bulanan',
-      dusun: 'Gamping Wetan',
-      lokasi: 'Balai Dusun Gamping Wetan',
-      tanggal: '2026-09-12',
-      waktu_mulai: '08:00',
-      waktu_selesai: '11:30',
-      petugas: 'Bu Sari',
-      status: 'rencana',
-      catatan: 'Penimbangan dan pemantauan tumbuh kembang balita.'
-    },
-    {
-      id: 2,
-      nama_kegiatan: 'Posyandu Melati',
-      dusun: 'Kemangsen',
-      lokasi: 'Balai Desa Kemangsen',
-      tanggal: '2026-09-19',
-      waktu_mulai: '08:00',
-      waktu_selesai: '11:00',
-      petugas: 'Bu Rina',
-      status: 'selesai',
-      catatan: 'Pemantauan bulanan.'
-    }
-  ];
-
-  const posTetap = [
-    {
-      nama: 'Posyandu Melati',
-      dusun: 'Dusun Gamping Wetan',
-      lokasi: 'Balai Dusun Gamping Wetan',
-      jadwal: 'Sabtu, 08.00–11.30',
-      pj: 'Bu Sari'
-    },
-    {
-      nama: 'Posyandu Mawar',
-      dusun: 'Dusun Boharan',
-      lokasi: 'Balai Dusun Boharan',
-      jadwal: 'Minggu, 08.00–11.30',
-      pj: 'Bu Rina'
-    }
-  ];
+  const lokasiPelayanan = [...new Map(
+    jadwalList.map((jadwal) => [`${jadwal.dusun}|${jadwal.lokasi}`, jadwal])
+  ).values()];
 
   return (
     <div className="landing-page font-sans text-ink-900 bg-white">
@@ -102,12 +84,12 @@ export const LandingPage: React.FC = () => {
         id="beranda"
         className="relative bg-cover bg-center overflow-hidden min-h-[580px] lg:min-h-[640px] flex items-center"
         style={{
-          backgroundImage: "linear-gradient(rgba(25, 20, 24, 0.62), rgba(25, 20, 24, 0.62)), url('/images/hero_landing.png')"
+          backgroundImage: "url('/images/hero_landing.png')"
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 relative z-10 w-full">
           <div className="hero-copy max-w-2xl text-left">
-            <h1 className="text-3xl sm:text-5xl lg:text-5xl font-black text-white leading-tight">
+            <h1 className="text-3xl sm:text-5xl lg:text-5xl font-black text-white leading-tight mb-5">
               <span className="hero-title-line">Tumbuh mereka berubah setiap</span>{' '}
               <span className="hero-title-line">bulan. Catatannya jangan sampai</span>{' '}
               <span className="hero-title-line">tertinggal.</span>
@@ -117,12 +99,20 @@ export const LandingPage: React.FC = () => {
               Posyandu Pintar membantu kader mencatat hasil timbang bulanan dan membantu bidan memantau perkembangan balita dengan lebih rapi.
             </p>
 
-            <div className="hero-actions flex items-center flex-wrap">
+            <div className="hero-actions flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <a
                 href="#tentang"
-                className="px-6 py-3 bg-ink-800/40 hover:bg-ink-800/60 text-white font-bold text-xs sm:text-sm rounded-xl border border-white/20 transition-base"
+                className="group px-6 py-3.5 bg-[#2196F3] hover:bg-white hover:text-[#0D47A1] text-white font-bold text-sm rounded-xl flex items-center gap-2.5 shadow-lg transition-base"
               >
-                Pelajari Tentang Kami
+                <span>Pelajari Tentang Kami</span>
+                <i className="bi bi-arrow-right transition-transform group-hover:translate-x-1"></i>
+              </a>
+              <a
+                href="#jadwal"
+                className="px-6 py-3.5 bg-white/10 hover:bg-white/25 text-white font-bold text-sm rounded-xl border border-white/30 flex items-center gap-2.5 backdrop-blur-sm transition-base"
+              >
+                <i className="bi bi-calendar-event"></i>
+                <span>Lihat Jadwal</span>
               </a>
             </div>
           </div>
@@ -280,7 +270,7 @@ export const LandingPage: React.FC = () => {
       <section className="py-20 bg-white border-t border-line" id="jadwal">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="inline-block px-3.5 py-1 rounded-full text-[11px] font-bold bg-[#E3F2FD] text-[#1976D2] mb-2.5">
+            <span className="section-kicker mb-2.5">
               Agenda Terpadu Desa
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0D47A1] mb-2.5">
@@ -291,56 +281,58 @@ export const LandingPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-            {staticJadwal.map((j) => (
+          <div className="public-schedule-grid grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            {jadwalLoading ? (
+              <p className="md:col-span-2 py-10 text-center text-sm text-ink-500">Memuat jadwal pelayanan…</p>
+            ) : jadwalError ? (
+              <p className="md:col-span-2 py-10 text-center text-sm text-rose-700">Jadwal belum dapat dimuat. Silakan coba lagi nanti.</p>
+            ) : jadwalList.length === 0 ? (
+              <p className="md:col-span-2 py-10 text-center text-sm text-ink-500">Belum ada jadwal pelayanan yang diterbitkan.</p>
+            ) : jadwalList.map((j: Jadwal) => (
               <div
                 key={j.id}
-                className="bg-white p-6 rounded-2xl border border-line shadow-xs border-l-4 border-l-[#2196F3] flex flex-col justify-between"
+                className="public-schedule-card bg-white p-6 rounded-2xl border border-line shadow-xs border-l-4 border-l-[#2196F3] flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-lg text-xs font-bold text-[#2196F3] border border-blue-200 bg-blue-50/50">
+                  <div className="public-schedule-heading flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                      <span className="schedule-location-label break-words">
                         Dusun {j.dusun}
                       </span>
-                      <span className="text-xs text-ink-500">Penimbangan Balita</span>
                     </div>
                     {j.status === 'selesai' ? (
-                      <span className="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white flex items-center gap-1.5">
+                      <span className="schedule-status schedule-status-done">
                         <i className="bi bi-check-circle"></i>
                         <span>Selesai</span>
                       </span>
                     ) : (
-                      <span className="px-3 py-1 rounded-lg text-xs font-bold bg-[#2196F3] text-white flex items-center gap-1.5">
+                      <span className="schedule-status schedule-status-upcoming">
                         <i className="bi bi-clock"></i>
                         <span>Akan Datang</span>
                       </span>
                     )}
                   </div>
 
-                  <h3 className="font-extrabold text-[#0D47A1] text-base mb-3">{j.nama_kegiatan}</h3>
+                  <h3 className="font-extrabold text-[#0D47A1] text-base mb-3 break-words">{j.nama_kegiatan}</h3>
 
-                  <div className="space-y-2 text-xs text-ink-700 mb-4">
-                    <div className="flex items-center gap-2">
+                  <div className="public-schedule-details space-y-2 text-xs text-ink-700 mb-4">
+                    <div className="flex items-start gap-2">
                       <i className="bi bi-calendar text-[#2196F3]"></i>
-                      <strong className="text-ink-900">
-                        {j.id === 1 ? '12 September 2026' : '19 September 2026'}
-                      </strong>
-                      <span className="text-ink-400">&bull; {j.waktu_mulai} - {j.waktu_selesai} WIB</span>
+                      <span><strong className="text-ink-900">{formatTanggalId(j.tanggal)}</strong><span className="text-ink-400"> · {j.waktu_mulai}–{j.waktu_selesai} WIB</span></span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-start gap-2">
                       <i className="bi bi-geo-alt-fill text-[#2196F3]"></i>
-                      <span>{j.lokasi}</span>
+                      <span className="min-w-0 break-words">{j.lokasi}</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-start gap-2">
                       <i className="bi bi-person-badge text-[#2196F3]"></i>
-                      <span>Petugas: <strong>{j.petugas}</strong></span>
+                      <span>Petugas: <strong>{j.petugas || 'Belum ditentukan'}</strong></span>
                     </div>
                   </div>
 
-                  <div className="p-3 bg-[#F0F7FF] border border-blue-100 rounded-xl text-xs text-ink-600 flex items-center gap-2">
+                  <div className="p-3 bg-[#F0F7FF] border border-blue-100 rounded-xl text-xs text-ink-600 flex items-start gap-2">
                     <i className="bi bi-info-circle text-[#2196F3]"></i>
-                    <span>{j.catatan}</span>
+                    <span>Pelayanan Posyandu untuk warga Dusun {j.dusun}.</span>
                   </div>
                 </div>
               </div>
@@ -352,32 +344,34 @@ export const LandingPage: React.FC = () => {
               <div>
                 <h3 className="font-extrabold text-[#0D47A1] text-sm sm:text-base flex items-center gap-2">
                   <i className="bi bi-hospital text-[#2196F3]"></i>
-                  <span>Daftar Pos Pelayanan Tetap Dusun</span>
+                  <span>Lokasi Agenda Pelayanan</span>
                 </h3>
                 <p className="text-xs text-ink-500 mt-0.5">
-                  Posyandu binaan desa yang beroperasi rutin setiap bulan bagi warga sekitar
+                  Lokasi dan waktu mengikuti agenda yang dikelola admin desa
                 </p>
               </div>
-              <span className="px-3 py-1 bg-slate-50 border border-line rounded-lg text-xs font-bold text-ink-700">
-                2 Pos Binaan
+              <span className="location-count-text">
+                {lokasiPelayanan.length} Lokasi
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {posTetap.map((pos, idx) => (
-                <div key={idx} className="p-4 rounded-xl bg-slate-50/70 border border-line flex flex-col justify-between">
+              {lokasiPelayanan.length === 0 ? (
+                <p className="sm:col-span-2 py-6 text-center text-sm text-ink-500">Lokasi pelayanan akan tampil setelah admin menambahkan agenda.</p>
+              ) : lokasiPelayanan.map((pos) => (
+                <div key={`${pos.dusun}-${pos.lokasi}`} className="p-4 rounded-xl bg-slate-50/70 border border-line flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <strong className="text-[#0D47A1] text-xs font-bold">{pos.nama}</strong>
+                      <strong className="text-[#0D47A1] text-xs font-bold">{pos.nama_kegiatan}</strong>
                     </div>
                     <div className="text-xs text-[#2196F3] font-semibold mb-1">
-                      <i className="bi bi-geo-alt me-1"></i> {pos.dusun}
+                      <i className="bi bi-geo-alt me-1"></i> Dusun {pos.dusun}
                     </div>
                     <p className="text-[11px] text-ink-500 mb-2">{pos.lokasi}</p>
                   </div>
                   <div className="pt-2 border-t border-line text-[11px] text-ink-700 space-y-0.5">
-                    <div><i className="bi bi-clock me-1 text-ink-400"></i> {pos.jadwal}</div>
-                    <div><i className="bi bi-person me-1 text-ink-400"></i> PJ: <strong>{pos.pj}</strong></div>
+                    <div><i className="bi bi-calendar3 me-1 text-ink-400"></i> {formatTanggalId(pos.tanggal)} · {pos.waktu_mulai}–{pos.waktu_selesai}</div>
+                    <div><i className="bi bi-person me-1 text-ink-400"></i> PJ: <strong>{pos.petugas || 'Belum ditentukan'}</strong></div>
                   </div>
                 </div>
               ))}
@@ -389,7 +383,7 @@ export const LandingPage: React.FC = () => {
       <section className="py-20 bg-white border-t border-line" id="kalkulator">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="inline-block px-3.5 py-1 rounded-full text-[11px] font-bold bg-[#E3F2FD] text-[#1976D2] mb-2.5">
+            <span className="section-kicker mb-2.5">
               Skrining Mandiri
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0D47A1] mb-2.5">
@@ -547,7 +541,7 @@ export const LandingPage: React.FC = () => {
 
                 <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                   <span className="text-xs font-bold text-ink-900">Status Evaluasi:</span>
-                  <span className={`px-4 py-1.5 rounded-full text-xs font-bold border flex items-center gap-1.5 ${kmsResult.badgeClass}`}>
+                  <span className={`result-status status-mark ${kmsResult.status === 'Prioritas Bidan' ? 'status-mark-prioritas' : kmsResult.status === 'Perlu Pemantauan' ? 'status-mark-pemantauan' : 'status-mark-normal'}`}>
                     <i className={`bi ${kmsResult.icon}`}></i>
                     <span>{kmsResult.status}</span>
                   </span>
@@ -615,18 +609,18 @@ export const LandingPage: React.FC = () => {
                     }}
                   >
                     <div className="space-y-3 relative z-10 text-white">
-                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-xs">
+                      <span className="article-category">
                         {daftarBlog[0].kategori}
                       </span>
                       <h3 className="text-xl sm:text-2xl font-black text-white group-hover:text-blue-200 transition-base leading-snug">
                         {daftarBlog[0].judul}
                       </h3>
-                      <div className="flex items-center gap-3 text-xs text-slate-300">
+                      <div className="blog-feature-meta flex items-center gap-3 text-xs text-slate-300">
                         <span><i className="bi bi-calendar3 me-1"></i> {daftarBlog[0].published_at ? formatTanggalId(daftarBlog[0].published_at) : ''}</span>
-                        <span>&bull;</span>
+                        <span className="blog-feature-meta-separator">&bull;</span>
                         <span><i className="bi bi-person me-1"></i> {daftarBlog[0].penulis || 'Tim Posyandu'}</span>
                       </div>
-                      <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                      <p className="blog-feature-summary text-xs sm:text-sm text-slate-200 leading-relaxed">
                         {daftarBlog[0].ringkasan}
                       </p>
                       <span className="inline-flex items-center gap-1.5 text-xs font-bold text-white pt-1">
@@ -637,28 +631,30 @@ export const LandingPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="blog-related flex flex-col justify-between space-y-4">
+                <div className="blog-related flex flex-col space-y-4">
                   <div className="text-xs font-extrabold uppercase tracking-wider text-[#0D47A1] flex items-center gap-1.5">
                     <i className="bi bi-star-fill text-amber-500"></i>
                     <span>Artikel Lainnya</span>
                   </div>
-                  {daftarBlog.slice(1).map((b) => (
-                    <div
-                      key={b.id}
-                      onClick={() => navigate(`/berita/${b.id}`)}
-                      className="cursor-pointer p-5 bg-white hover:bg-slate-50 rounded-2xl border border-line shadow-xs transition-base space-y-2"
-                    >
-                      <span className="text-xs font-bold text-[#2196F3] block">{b.kategori}</span>
-                      <h4 className="text-sm font-extrabold text-[#0D47A1]">{b.judul}</h4>
-                      <div className="flex items-center justify-between pt-1 text-xs text-ink-400">
-                        <span><i className="bi bi-calendar3 me-1"></i> {b.published_at ? formatTanggalId(b.published_at) : ''}</span>
-                        <span className="text-[#2196F3] font-bold">Baca &rarr;</span>
+                  <div className={`flex-1 flex flex-col ${daftarBlog.length > 1 ? 'justify-start space-y-4' : 'justify-center'}`}>
+                    {daftarBlog.slice(1).map((b) => (
+                      <div
+                        key={b.id}
+                        onClick={() => navigate(`/berita/${b.id}`)}
+                        className="cursor-pointer p-5 bg-white hover:bg-slate-50 rounded-2xl border border-line shadow-xs transition-base space-y-2"
+                      >
+                        <span className="text-xs font-bold text-[#2196F3] block">{b.kategori}</span>
+                        <h4 className="text-sm font-extrabold text-[#0D47A1]">{b.judul}</h4>
+                        <div className="flex items-center justify-between pt-1 text-xs text-ink-400">
+                          <span><i className="bi bi-calendar3 me-1"></i> {b.published_at ? formatTanggalId(b.published_at) : ''}</span>
+                          <span className="text-[#2196F3] font-bold">Baca &rarr;</span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {daftarBlog.length === 1 && (
-                    <p className="text-xs text-ink-400">Belum ada artikel lainnya.</p>
-                  )}
+                    ))}
+                    {daftarBlog.length === 1 && (
+                      <p className="text-xs text-ink-400 text-center py-8">Belum ada artikel lainnya.</p>
+                    )}
+                  </div>
                 </div>
               </>
             )}
@@ -721,6 +717,40 @@ export const LandingPage: React.FC = () => {
                 </div>
               ))
             )}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-20 bg-white border-t border-line" id="faq">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="section-kicker mb-2.5">
+              Pertanyaan Umum
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0D47A1] mb-2.5">
+              Pertanyaan yang Sering Diajukan
+            </h2>
+            <p className="text-xs sm:text-sm text-ink-600 leading-relaxed">
+              Temukan jawaban seputar cara kerja Posyandu Pintar dan pengelolaan data tumbuh kembang balita.
+            </p>
+          </div>
+
+          <div className="max-w-3xl mx-auto space-y-3">
+            {FAQ_LIST.map((f, i) => (
+              <div key={i} className="border border-line rounded-2xl bg-white overflow-hidden shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => setFaqOpen(faqOpen === i ? null : i)}
+                  className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left"
+                >
+                  <span className="text-sm font-bold text-[#0D47A1]">{f.q}</span>
+                  <i className={`bi ${faqOpen === i ? 'bi-chevron-up' : 'bi-chevron-down'} text-[#2196F3] text-sm shrink-0`}></i>
+                </button>
+                {faqOpen === i && (
+                  <div className="px-5 pb-4 -mt-1 text-xs text-ink-600 leading-relaxed">{f.a}</div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
       </section>

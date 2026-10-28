@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import type { UserRole } from '../types';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -18,21 +17,6 @@ export const LoginPage: React.FC = () => {
 
     try {
       await login(username, password);
-      navigate('/dashboard');
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Gagal terhubung ke layanan server.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRoleQuickSelect = async (role: UserRole) => {
-    setUsername(role);
-    setPassword('123');
-    setLoading(true);
-    setErrorMsg('');
-    try {
-      await login(role, '123');
       navigate('/dashboard');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Gagal terhubung ke layanan server.');
@@ -63,7 +47,7 @@ export const LoginPage: React.FC = () => {
           </button>
 
           <div className="space-y-4 max-w-lg">
-            <span className="inline-block px-3.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-white/20 text-white backdrop-blur-xs">
+            <span className="login-eyebrow">
               Posyandu Pintar
             </span>
             <h1 className="text-3xl lg:text-4xl font-extrabold leading-tight text-white">
@@ -149,32 +133,6 @@ export const LoginPage: React.FC = () => {
               Kembali ke Beranda
             </button>
           </form>
-
-          {(
-            <div className="login-role-buttons pt-2 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => handleRoleQuickSelect('admin')}
-                className="px-5 py-2 bg-[#2196F3] hover:bg-[#1976D2] text-white text-xs font-bold rounded-full transition-base shadow-xs"
-              >
-                Admin
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRoleQuickSelect('bidan')}
-                className="px-5 py-2 bg-[#2196F3] hover:bg-[#1976D2] text-white text-xs font-bold rounded-full transition-base shadow-xs"
-              >
-                Bidan
-              </button>
-              <button
-                type="button"
-                onClick={() => handleRoleQuickSelect('kader')}
-                className="px-5 py-2 bg-[#2196F3] hover:bg-[#1976D2] text-white text-xs font-bold rounded-full transition-base shadow-xs"
-              >
-                Kader
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </div>

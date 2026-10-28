@@ -44,8 +44,8 @@ export const Topbar: React.FC = () => {
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#E3F2FD] border border-[#90CAF9] text-[#1976D2] text-xs font-bold">
-          <i className="bi bi-shield-check text-xs"></i>
+        <div className="topbar-role-label flex items-center gap-2 text-[#1976D2] text-xs font-semibold">
+          <i className="bi bi-shield-check text-sm"></i>
           <span>{ROLE_LABELS[role]}</span>
         </div>
 

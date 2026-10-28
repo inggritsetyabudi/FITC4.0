@@ -8,6 +8,10 @@ import { StatusBadge } from '../components/ui/StatusBadge';
 import { hitungUmur, formatTanggalId } from '../utils/helpers';
 import { DUSUN_LIST } from '../utils/constants';
 import type { Balita, Pengukuran } from '../types';
+import type { ChartData, ChartOptions } from 'chart.js';
+
+const BarChartView = React.lazy(() => import('../components/ui/ChartViews').then((module) => ({ default: module.BarChartView })));
+const LineChartView = React.lazy(() => import('../components/ui/ChartViews').then((module) => ({ default: module.LineChartView })));
 
 const BULAN_NAMA = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
@@ -73,14 +77,63 @@ export const DashboardPage: React.FC = () => {
         prioritas: anakDusun.filter((b) => ['prioritas', 'berisiko'].includes(b.status_terakhir || '')).length
       };
     });
-    const maxSebaran = Math.max(1, ...sebaran.map((d) => Math.max(d.normal, d.pemantauan, d.prioritas)));
-
     const enamBulan = [...new Set(pengukuran.map((p) => p.tanggal_ukur.slice(0, 7)))].sort().slice(-6);
     const tren = enamBulan.map((bulan) => ({
       bulan,
       jumlah: pengukuran.filter((p) => p.tanggal_ukur.startsWith(bulan)).length
     }));
-    const maxTren = Math.max(1, ...tren.map((t) => t.jumlah));
+
+    const sebaranChartData: ChartData<'bar'> = {
+      labels: sebaran.map((dusun) => dusun.name),
+      datasets: [
+        { label: 'Normal', data: sebaran.map((dusun) => dusun.normal), backgroundColor: '#0D47A1', borderRadius: 3, borderSkipped: false, stack: 'status' },
+        { label: 'Pemantauan', data: sebaran.map((dusun) => dusun.pemantauan), backgroundColor: '#F59E0B', borderRadius: 3, borderSkipped: false, stack: 'status' },
+        { label: 'Prioritas Bidan', data: sebaran.map((dusun) => dusun.prioritas), backgroundColor: '#E11D48', borderRadius: 3, borderSkipped: false, stack: 'status' }
+      ]
+    };
+    const sebaranChartOptions: ChartOptions<'bar'> = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true, backgroundColor: '#0D2744', padding: 10, usePointStyle: true }
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, border: { display: false }, ticks: { color: '#607D99', font: { size: 11 } } },
+        y: { stacked: true, beginAtZero: true, border: { display: false }, grid: { color: '#E8EFF5' }, ticks: { precision: 0, color: '#607D99', font: { size: 10 } } }
+      }
+    };
+    const trendChartData: ChartData<'line'> = {
+      labels: tren.map(({ bulan }) => `${BULAN_NAMA[Number(bulan.split('-')[1]) - 1].slice(0, 3)} '${bulan.slice(2, 4)}`),
+      datasets: [{
+        label: 'Pengukuran',
+        data: tren.map(({ jumlah }) => jumlah),
+        borderColor: '#1976D2',
+        backgroundColor: 'rgba(25, 118, 210, .10)',
+        fill: true,
+        tension: .35,
+        borderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        pointBackgroundColor: '#0D47A1',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
+      }]
+    };
+    const trendChartOptions: ChartOptions<'line'> = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: true, backgroundColor: '#0D2744', padding: 10, callbacks: { label: (context) => `${context.parsed.y} pengukuran` } }
+      },
+      scales: {
+        x: { grid: { display: false }, border: { display: false }, ticks: { color: '#607D99', maxRotation: 0, font: { size: 10 } } },
+        y: { beginAtZero: true, border: { display: false }, grid: { color: '#E8EFF5' }, ticks: { precision: 0, color: '#607D99', font: { size: 10 } } }
+      }
+    };
 
     return (
       <div className="dashboard-page dashboard-bidan space-y-6 max-w-6xl mx-auto">
@@ -112,7 +165,7 @@ export const DashboardPage: React.FC = () => {
         <section className="bg-white rounded-2xl border-2 border-[#FFC107] p-6 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-line gap-2">
             <div>
-              <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-2.5 py-0.5 rounded-full inline-block mb-1.5">
+              <span className="dashboard-eyebrow inline-block mb-1.5">
                 ★ Tinjauan Utama
               </span>
               <h2 className="text-base font-bold text-[#0D47A1]">Daftar Balita Perlu Ditinjau Bidan</h2>
@@ -204,17 +257,10 @@ export const DashboardPage: React.FC = () => {
           <div className="bg-white p-6 rounded-2xl border border-line shadow-xs">
             <h3 className="font-bold text-sm text-[#0D47A1]">Sebaran Status Gizi per Dusun</h3>
             <p className="text-xs text-[#607D99] mb-6">Kondisi balita berdasarkan hasil penimbangan terakhir</p>
-            <div className="h-44 flex items-end justify-between px-6 pb-4 border-b border-line gap-4">
-              {sebaran.map((d) => (
-                <div key={d.name} className="flex flex-col items-center gap-2 flex-1">
-                  <div className="w-full flex items-end justify-center gap-1.5 h-32">
-                    {d.normal > 0 && <div style={{ height: `${(d.normal / maxSebaran) * 100}%` }} className="w-3 bg-[#0D47A1] rounded-t-sm"></div>}
-                    {d.pemantauan > 0 && <div style={{ height: `${(d.pemantauan / maxSebaran) * 100}%` }} className="w-3 bg-amber-500 rounded-t-sm"></div>}
-                    {d.prioritas > 0 && <div style={{ height: `${(d.prioritas / maxSebaran) * 100}%` }} className="w-3 bg-rose-600 rounded-t-sm"></div>}
-                  </div>
-                  <span className="text-[11px] text-[#607D99] font-medium">{d.name}</span>
-                </div>
-              ))}
+            <div className="h-44 w-full relative">
+              <React.Suspense fallback={<div className="h-full animate-pulse rounded-xl bg-slate-50" />}>
+                <BarChartView data={sebaranChartData} options={sebaranChartOptions} ariaLabel="Sebaran status gizi per dusun" />
+              </React.Suspense>
             </div>
             <div className="flex items-center justify-center gap-5 mt-4 text-[11px] font-semibold text-[#607D99]">
               <div className="flex items-center gap-1.5">
@@ -235,35 +281,13 @@ export const DashboardPage: React.FC = () => {
           <div className="bg-white p-6 rounded-2xl border border-line shadow-xs">
             <h3 className="font-bold text-sm text-[#0D47A1]">Tren Cakupan Penimbangan Desa</h3>
             <p className="text-xs text-[#607D99] mb-4">Jumlah pengukuran yang tercatat tiap bulan</p>
-            <div className="h-48 w-full">
+            <div className="h-48 w-full relative">
               {tren.length === 0 ? (
                 <p className="text-center text-ink-500 py-16 text-xs">Belum ada data pengukuran.</p>
               ) : (
-                <svg viewBox="0 0 450 160" className="w-full h-full select-none">
-                  {(() => {
-                    const points = tren.map((t, i) => ({
-                      x: 47 + i * (369 / Math.max(1, tren.length - 1)),
-                      y: 140 - (t.jumlah / maxTren) * 100
-                    }));
-                    const line = points.map((p) => `${p.x},${p.y}`).join(' L ');
-                    return (
-                      <>
-                        <path d={`M ${line} L ${points[points.length - 1].x},148 L ${points[0].x},148 Z`} fill="#0D47A1" fillOpacity="0.09" />
-                        <path d={`M ${line}`} fill="none" stroke="#1976D2" strokeWidth="3" strokeLinecap="round" />
-                        {points.map((p, i) => (
-                          <g key={tren[i].bulan}>
-                            <circle cx={p.x} cy={p.y} r="4" fill="#0D47A1">
-                              <title>{labelBulan(tren[i].bulan)}: {tren[i].jumlah} pengukuran</title>
-                            </circle>
-                            <text x={p.x} y={155} fontSize="10" fill="#607D99" textAnchor="middle">
-                              {BULAN_NAMA[Number(tren[i].bulan.split('-')[1]) - 1].slice(0, 3)} {tren[i].bulan.split('-')[0].slice(2)}
-                            </text>
-                          </g>
-                        ))}
-                      </>
-                    );
-                  })()}
-                </svg>
+                <React.Suspense fallback={<div className="h-full animate-pulse rounded-xl bg-slate-50" />}>
+                  <LineChartView data={trendChartData} options={trendChartOptions} ariaLabel="Tren cakupan penimbangan desa" />
+                </React.Suspense>
               )}
             </div>
           </div>
@@ -281,7 +305,7 @@ export const DashboardPage: React.FC = () => {
         <section className="bg-white rounded-2xl border border-line border-l-4 border-l-[#2196F3] p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1.5">
-              <span className="bg-[#E3F2FD] text-[#0D47A1] text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+              <span className="dashboard-eyebrow">
                 Admin Posyandu
               </span>
               <span className="text-xs text-[#607D99]">{labelBulan(bulanBerjalan)}</span>

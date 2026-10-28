@@ -77,7 +77,7 @@ export const ProfilPage: React.FC = () => {
           <div>
             <h2 className="text-base font-extrabold text-[#0D47A1]">{user?.nama}</h2>
             <div className="flex items-center gap-2 mt-1">
-              <span className="px-3 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#2196F3] border border-blue-200 flex items-center gap-1.5">
+              <span className="profile-role-label">
                 <i className="bi bi-shield-check"></i>
                 <span className="capitalize">{user?.role} Posyandu</span>
               </span>

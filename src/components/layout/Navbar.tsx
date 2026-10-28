@@ -7,7 +7,8 @@ const NAV_LINKS = [
   { href: '#tentang', label: 'Tentang Kami' },
   { href: '#jadwal', label: 'Jadwal Posyandu' },
   { href: '#blog', label: 'Blog' },
-  { href: '#berita', label: 'Berita' }
+  { href: '#berita', label: 'Berita' },
+  { href: '#faq', label: 'FAQ' }
 ];
 
 export const Navbar: React.FC = () => {
@@ -19,17 +20,17 @@ export const Navbar: React.FC = () => {
     <header className="public-navbar sticky top-0 z-50 bg-[#0D47A1] text-white shadow-md font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          <Link to="/" className="flex items-center gap-3 text-left focus:outline-none">
+          <Link to="/" className="flex items-center gap-3 text-left focus:outline-none min-w-0">
             <img
               src="/images/logo sementara.png"
               alt="Logo Posyandu Pintar"
-              className="h-11 w-auto object-contain"
+              className="public-brand-mark h-11 w-auto object-contain shrink-0"
             />
-            <div>
-              <span className="block font-bold text-white text-xl leading-tight tracking-tight">
+            <div className="min-w-0">
+              <span className="block font-bold text-white text-lg sm:text-xl leading-tight tracking-tight whitespace-nowrap">
                 Posyandu Pintar
               </span>
-              <span className="block text-xs text-[#90CAF9] font-medium">
+              <span className="hidden sm:block text-xs text-[#90CAF9] font-medium">
                 Layanan Tumbuh Kembang Desa
               </span>
             </div>
@@ -47,7 +48,7 @@ export const Navbar: React.FC = () => {
             ))}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             {user ? (
               <button
                 onClick={() => navigate('/dashboard')}
@@ -69,6 +70,8 @@ export const Navbar: React.FC = () => {
               onClick={() => setOpen((o) => !o)}
               className="md:hidden p-2 rounded-lg border border-white/30 text-white"
               aria-label="Buka menu navigasi"
+              aria-expanded={open}
+              aria-controls="public-mobile-navigation"
             >
               <i className={`bi ${open ? 'bi-x-lg' : 'bi-list'} text-xl`}></i>
             </button>
@@ -77,7 +80,7 @@ export const Navbar: React.FC = () => {
       </div>
 
       {open && (
-        <div className="md:hidden bg-[#1565C0] border-t border-white/10 px-4 pb-4 pt-2 space-y-1">
+        <div id="public-mobile-navigation" className="md:hidden bg-[#1565C0] border-t border-white/10 px-4 pb-4 pt-2 space-y-1">
           {NAV_LINKS.map((l) =>
             l.href === '/' ? (
               <button
