@@ -4,10 +4,6 @@ CREATE DATABASE IF NOT EXISTS posyandu_pintar
 
 USE posyandu_pintar;
 
--- ---------------------------------------------------------------------------
--- Tabel
--- ---------------------------------------------------------------------------
-
 CREATE TABLE IF NOT EXISTS dusun (
   id    INT UNSIGNED NOT NULL AUTO_INCREMENT,
   nama  VARCHAR(100) NOT NULL,
@@ -19,9 +15,9 @@ CREATE TABLE IF NOT EXISTS users (
   id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
   nama        VARCHAR(150) NOT NULL,
   username    VARCHAR(50)  NOT NULL,
-  password    VARCHAR(255) NOT NULL,                       -- hash password_hash() PHP
+  password    VARCHAR(255) NOT NULL,                      
   role        ENUM('kader','bidan','admin') NOT NULL DEFAULT 'kader',
-  dusun_id    INT UNSIGNED NULL,                           -- dusun binaan (khusus kader)
+  dusun_id    INT UNSIGNED NULL,                          
   telepon     VARCHAR(30)  NULL,
   created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -63,11 +59,9 @@ CREATE TABLE IF NOT EXISTS pengukuran (
   dicatat_oleh_id  INT UNSIGNED NULL,
   created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  -- satu pengukuran per balita per hari (memicu error 1062 -> "duplikat" di API)
   UNIQUE KEY uq_pengukuran_balita_tanggal (balita_id, tanggal_ukur),
   KEY idx_pengukuran_tanggal (tanggal_ukur),
   KEY idx_pengukuran_status (kategori_status),
-  -- batas sama dengan form: berat 1-40 kg, tinggi 30-140 cm (error 3819 di API)
   CONSTRAINT chk_pengukuran_berat  CHECK (berat_kg  BETWEEN 1 AND 40),
   CONSTRAINT chk_pengukuran_tinggi CHECK (tinggi_cm BETWEEN 30 AND 140),
   CONSTRAINT fk_pengukuran_balita FOREIGN KEY (balita_id)
@@ -107,17 +101,11 @@ CREATE TABLE IF NOT EXISTS jadwal (
   created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   KEY idx_jadwal_tanggal (tanggal),
-  -- jam selesai harus setelah jam mulai (error 3819 di API)
   CONSTRAINT chk_jadwal_waktu CHECK (waktu_selesai > waktu_mulai),
   CONSTRAINT fk_jadwal_dusun FOREIGN KEY (dusun_id)
     REFERENCES dusun (id) ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
--- ---------------------------------------------------------------------------
--- Data awal
--- ---------------------------------------------------------------------------
-
--- Nama dusun harus persis sama dengan DUSUN_LIST di src/utils/constants.ts
 INSERT INTO dusun (id, nama) VALUES
   (1, 'Gamping Wetan'),
   (2, 'Gamping Tengah'),
@@ -140,8 +128,6 @@ INSERT INTO balita (id, nama, nik, tanggal_lahir, jenis_kelamin, nama_ortu, dusu
   (5, 'Nayla Kirana',  NULL,               '2023-06-15', 'P', 'Dewi Anggraini',  5, 'aktif', 3),
   (6, 'Fajar Ramadhan','3404000000000006', '2025-04-10', 'L', 'Budi Santoso',    1, 'aktif', 3);
 
--- kategori_status mengikuti aturan evaluasi_status_pengukuran() di api/config/helpers.php:
---   pengukuran pertama = normal; selisih BB < -0,3 = prioritas; selisih <= 0 = pemantauan; selain itu normal
 INSERT INTO pengukuran (balita_id, tanggal_ukur, berat_kg, tinggi_cm, kategori_status, catatan, dicatat_oleh_id) VALUES
   (1, '2026-06-10', 11.20, 84.0, 'normal',     NULL, 3),
   (1, '2026-07-10', 11.50, 85.0, 'normal',     NULL, 3),
@@ -164,7 +150,6 @@ INSERT INTO pengukuran (balita_id, tanggal_ukur, berat_kg, tinggi_cm, kategori_s
 
   (6, '2026-08-14',  6.90, 64.0, 'normal',     NULL, 3);
 
--- Gambar ada di public/images/ (dilayani Vite). Teks berikut contoh, silakan ganti.
 INSERT INTO berita (id, judul, kategori, tipe, ringkasan, isi, gambar, status, published_at, penulis_id) VALUES
   (1, 'Vitamin A dan dukungannya untuk tumbuh kembang', 'GIZI BALITA', 'blog',
    'Vitamin A dibagikan pada bulan Februari dan Agustus untuk balita usia 6-59 bulan.',
