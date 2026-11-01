@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS balita (
   id               INT UNSIGNED NOT NULL AUTO_INCREMENT,
   nama             VARCHAR(150) NOT NULL,
-  nik              VARCHAR(16)  NULL,                      -- NULL jika tidak diisi
+  nik              VARCHAR(16)  NULL,                      
   tanggal_lahir    DATE NOT NULL,
   jenis_kelamin    ENUM('L','P') NOT NULL,
   nama_ortu        VARCHAR(150) NOT NULL,
